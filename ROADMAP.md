@@ -58,6 +58,14 @@ flowchart LR
   - **Nuclei / HTTPX Target List**: Export newline-delimited host lists (`hosts.txt`) for immediate CLI feeding.
   - **CSV / TSV Export**: Export table structures for spreadsheet analysis, Jira ticket attachments, and executive deliverables.
   - **NDJSON (JSON Lines)**: Standardized event format for ingestion into Elasticsearch, Splunk, or SIEM pipelines.
+- [ ] **Multi-Dialect Markdown & Clipboard Exporter**
+  - Flexible editor flavor selector before exporting or copying findings:
+    - **Obsidian Vault (Default)**: YAML frontmatter, native callouts (`> [!WARNING]`), and tag pills.
+    - **Standard Raw GFM**: GitHub, GitLab, Jira, VS Code, and Typora compatible with standard bold/code formatting.
+    - **Notion & Confluence**: Clean document layout, blockquotes, and collapsible `<details><summary>` toggle lists.
+    - **Outliner Format**: Logseq and Roam Research indented bullet hierarchy.
+  - **"Copy Markdown to Clipboard"** one-click action to eliminate `~/Downloads` file clutter.
+  - Persistent editor preference stored in `browser.storage.local`.
 
 ---
 
@@ -117,6 +125,7 @@ flowchart LR
 | Feature | Impact | Effort | Target Milestone |
 | :--- | :---: | :---: | :---: |
 | **Virtualized DOM for CRT.SH** | 🔴 High | 🟡 Medium | v1.1.0 |
+| **Multi-Dialect Markdown & Clipboard Copy** | 🔴 High | 🟢 Low | v1.2.0 |
 | **Burp / Nuclei Scope Exporters** | 🔴 High | 🟢 Low | v1.2.0 |
 | **Custom Dork Pack Import/Export** | 🟡 Medium | 🟢 Low | v1.2.0 |
 | **Interactive Infrastructure Graph** | 🔴 High | 🔴 High | v1.3.0 |
