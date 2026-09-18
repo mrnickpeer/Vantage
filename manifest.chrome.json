@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Vantage",
+  "version": "1.0.0",
+  "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "downloads",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://crt.sh/*",
+    "https://keyserver.ubuntu.com/*",
+    "https://whois.arin.net/*",
+    "https://rdap.arin.net/*",
+    "https://rest.db.ripe.net/*",
+    "https://rdap.db.ripe.net/*",
+    "https://rdap.apnic.net/*",
+    "https://cloudflare-dns.com/*",
+    "https://dns.google/*",
+    "https://internetdb.shodan.io/*",
+    "https://api.shodan.io/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Open Vantage Dashboard",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "minimum_chrome_version": "109"
+}

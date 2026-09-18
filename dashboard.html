@@ -1,0 +1,559 @@
+<!-- dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vantage</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="col-left">
+      <header>
+        <div>
+          <h1>Vantage</h1>
+          <span class="sub-heading">Attack Surface & Recon Suite</span>
+        </div>
+        <div class="header-right">
+          <label class="guidance-toggle" title="Toggle beginner guidance, threat context cards, and operator explanations">
+            <input type="checkbox" id="toggle-guidance" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label">🎓 Guidance</span>
+          </label>
+          <div class="engines">
+            <label><input type="radio" name="engine" value="google" checked> Google</label>
+            <label><input type="radio" name="engine" value="bing"> Bing</label>
+            <label><input type="radio" name="engine" value="ddg"> DDG</label>
+          </div>
+        </div>
+      </header>
+      
+      <section class="composer">
+        <div class="input-group">
+          <label for="f-preset">Quick Intent Template <span class="guidance-item">(pre-configured exposure dork)</span></label>
+          <select id="f-preset">
+            <option value="">-- Choose an Intent Template --</option>
+          </select>
+        </div>
+
+        <div id="exposure-card" class="exposure-card guidance-item" style="display: none;">
+          <div class="exposure-card-header">
+            <span id="exp-risk-badge" class="risk-badge">HIGH RISK</span>
+            <span id="exp-template-title" class="exp-title"></span>
+          </div>
+          <div class="exp-body">
+            <div class="exp-item">
+              <span class="exp-label">⚠️ What It Leaks:</span>
+              <span id="exp-what-leaks" class="exp-desc"></span>
+            </div>
+            <div class="exp-item">
+              <span class="exp-label">🎯 True Positive Sign:</span>
+              <span id="exp-true-positive" class="exp-desc"></span>
+            </div>
+            <div class="exp-item">
+              <span class="exp-label">🛡️ Remediation:</span>
+              <span id="exp-remediation" class="exp-desc"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="f-domain">Target Domain <span class="guidance-item">(site:) restricts search to this host</span></label>
+          <div class="input-inline">
+            <input type="text" id="f-domain" placeholder="example.com">
+            <button type="button" id="btn-use-tab" title="Extract domain from active tab">Current Tab</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="f-filetype">File Type <span class="guidance-item">(filetype:) targets extensions like env, sql, pdf</span></label>
+          <input type="text" id="f-filetype" placeholder="pdf, xlsx, json, env">
+        </div>
+        <div class="input-group">
+          <label for="f-inurl">In URL <span class="guidance-item">(inurl:) finds endpoints like /admin, /staging</span></label>
+          <input type="text" id="f-inurl" placeholder="staging, api, dev, login">
+        </div>
+        <div class="input-group">
+          <label for="f-intitle">In Title <span class="guidance-item">(intitle:) searches HTML page title</span></label>
+          <input type="text" id="f-intitle" placeholder="index of, dashboard">
+        </div>
+        <div class="input-group">
+          <label for="f-exact">Exact Phrases <span class="guidance-item">("...") forces verbatim quoted phrase</span></label>
+          <input type="text" id="f-exact" placeholder="password, API_KEY, confidential">
+        </div>
+        <div class="input-group">
+          <label for="f-exclude">Exclusions <span class="guidance-item">(-site:) removes known domains or noise</span></label>
+          <input type="text" id="f-exclude" placeholder="-www -blog -site:github.com">
+        </div>
+
+        <div class="temporal-row">
+          <div class="temporal-header">
+            <label>Time Filter</label>
+            <span class="guidance-hint guidance-item">Avoid stale/dead results</span>
+          </div>
+          <div class="temporal-chips">
+            <button type="button" class="temporal-chip active" data-time="any">Any</button>
+            <button type="button" class="temporal-chip" data-time="y">Year</button>
+            <button type="button" class="temporal-chip" data-time="m">Month</button>
+            <button type="button" class="temporal-chip" data-time="w">Week</button>
+            <button type="button" class="temporal-chip" data-time="d">24h</button>
+          </div>
+        </div>
+
+        <div class="serp-options">
+          <label class="checkbox-inline" title="Force exact keyword and operator matching (&tbs=li:1) to prevent Google from dropping quotes or autocorrecting">
+            <input type="checkbox" id="f-verbatim" checked>
+            <span>Verbatim Search</span>
+            <span class="guidance-item tip-badge">Strict Google</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="preview-area">
+        <div class="preview-header">
+          <span>Compiled Query</span>
+          <span id="token-count" class="badge">0 words</span>
+        </div>
+        <textarea id="query-output" readonly></textarea>
+        <div id="linter-warnings"></div>
+        <div class="actions">
+          <button id="btn-search" class="primary">Search New Tab</button>
+          <button id="btn-copy">Copy</button>
+          <button id="btn-reset">Reset</button>
+          <button id="btn-save-profile">Save Profile</button>
+          <button id="btn-save-template">Save as Template</button>
+          <button id="btn-wayback" title="Lookup domain on Wayback Machine">Wayback</button>
+        </div>
+      </section>
+    </aside>
+
+    <main class="col-right">
+      <section id="guided-checklist" class="guided-checklist guidance-item">
+        <div class="checklist-header">
+          <div class="checklist-title">
+            <span class="checklist-icon">🧭</span>
+            <div>
+              <strong>Guided Audit Methodology</strong>
+              <span class="checklist-subtitle">Standard 6-Step Exposure Assessment</span>
+            </div>
+          </div>
+          <div class="checklist-actions">
+            <span id="checklist-progress-text" class="badge">0 / 6 Done</span>
+            <button type="button" id="btn-toggle-checklist" class="btn-ghost" title="Minimize / Expand Checklist">Minimize</button>
+          </div>
+        </div>
+        <div id="checklist-steps" class="checklist-steps">
+          <div class="step-card" id="step-target">
+            <div class="step-header">
+              <span class="step-badge">Step 1</span>
+              <button type="button" class="step-help-btn" data-step="1" title="Methodology: What & Why for Step 1">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Scope Target</strong>
+            <p>Enter domain or grab from tab.</p>
+            <button type="button" id="step-btn-target" class="step-btn">Grab Active Tab</button>
+          </div>
+          <div class="step-card" id="step-crt">
+            <div class="step-header">
+              <span class="step-badge">Step 2</span>
+              <button type="button" class="step-help-btn" data-step="2" title="Methodology: What & Why for Step 2">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Map Subdomains</strong>
+            <p>Passive CT logs via crt.sh.</p>
+            <button type="button" id="step-btn-crt" class="step-btn">Open CRT.SH</button>
+          </div>
+          <div class="step-card" id="step-infra">
+            <div class="step-header">
+              <span class="step-badge">Step 3</span>
+              <button type="button" class="step-help-btn" data-step="3" title="Methodology: What & Why for Step 3">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Infrastructure & Nets</strong>
+            <p>Sibling apexes, RIRs & Shodan.</p>
+            <button type="button" id="step-btn-infra" class="step-btn">Open Infrastructure</button>
+          </div>
+          <div class="step-card" id="step-emails">
+            <div class="step-header">
+              <span class="step-badge">Step 4</span>
+              <button type="button" class="step-help-btn" data-step="4" title="Methodology: What & Why for Step 4">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Identity & Pattern</strong>
+            <p>Deduce email convention.</p>
+            <button type="button" id="step-btn-emails" class="step-btn">Open Emails</button>
+          </div>
+          <div class="step-card" id="step-dorks">
+            <div class="step-header">
+              <span class="step-badge">Step 5</span>
+              <button type="button" class="step-help-btn" data-step="5" title="Methodology: What & Why for Step 5">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Run Key Dorks</strong>
+            <p>Secrets, configs & admin portals.</p>
+            <button type="button" id="step-btn-dorks" class="step-btn">Load Critical Dork</button>
+          </div>
+          <div class="step-card" id="step-export">
+            <div class="step-header">
+              <span class="step-badge">Step 6</span>
+              <button type="button" class="step-help-btn" data-step="6" title="Methodology: What & Why for Step 6">?</button>
+              <span class="step-status">⏳</span>
+            </div>
+            <strong>Export Obsidian</strong>
+            <p>Save structured triage report.</p>
+            <button type="button" id="step-btn-export" class="step-btn">Audit & Export</button>
+          </div>
+        </div>
+      </section>
+      <nav class="tabs">
+        <button class="tab-btn active" data-target="tab-templates">Templates</button>
+        <button class="tab-btn" data-target="tab-crt">CRT.SH Scope</button>
+        <button class="tab-btn" data-target="tab-infra">Infrastructure & Netblocks</button>
+        <button class="tab-btn" data-target="tab-emails">Emails</button>
+        <button class="tab-btn" data-target="tab-profiles">Profiles</button>
+        <button class="tab-btn" data-target="tab-audit">Audit Log</button>
+      </nav>
+
+      <div class="tab-content active" id="tab-templates">
+        <div class="toolbar">
+          <div>
+            <h2>Templates Taxonomy</h2>
+            <p class="section-desc">Manage preset intent dorks and create custom templates.</p>
+          </div>
+          <div class="toolbar-actions">
+            <select id="template-cat-filter">
+              <option value="all">All Categories</option>
+            </select>
+            <button id="btn-new-template" class="primary">+ New Template</button>
+            <button id="btn-reset-defaults" title="Reset to standard beginner-friendly templates">Restore Defaults</button>
+            <button id="btn-export-data">Backup JSON</button>
+            <button id="btn-import-data">Import JSON</button>
+            <input type="file" id="import-file" hidden accept=".json">
+          </div>
+        </div>
+
+        <div id="new-template-form" class="card-form" style="display: none;">
+          <h3>Create Custom Template</h3>
+          <div class="form-grid">
+            <div class="input-group">
+              <label for="t-name">Template Name</label>
+              <input type="text" id="t-name" placeholder="e.g. AWS Keys & Credentials">
+            </div>
+            <div class="input-group">
+              <label for="t-category">Category</label>
+              <input type="text" id="t-category" placeholder="e.g. Secrets & Keys" list="category-suggestions">
+              <datalist id="category-suggestions">
+                <option value="Secrets & Keys">
+                <option value="Admin & Portals">
+                <option value="Open Directories">
+                <option value="Backup & Dumps">
+                <option value="Cloud Buckets">
+                <option value="Public Documents">
+                <option value="Staging & Dev">
+                <option value="Error & Log Files">
+                <option value="Identity & Contacts">
+              </datalist>
+            </div>
+            <div class="input-group">
+              <label for="t-filetype">File Type (comma separated)</label>
+              <input type="text" id="t-filetype" placeholder="env, json, yml">
+            </div>
+            <div class="input-group">
+              <label for="t-inurl">In URL (comma separated)</label>
+              <input type="text" id="t-inurl" placeholder="api, credentials">
+            </div>
+            <div class="input-group">
+              <label for="t-intitle">In Title</label>
+              <input type="text" id="t-intitle" placeholder="index of">
+            </div>
+            <div class="input-group">
+              <label for="t-exact">Exact Phrases (comma separated)</label>
+              <input type="text" id="t-exact" placeholder="access_key, secret_key">
+            </div>
+            <div class="input-group form-grid-full">
+              <label for="t-exclude">Exclusions (space separated)</label>
+              <input type="text" id="t-exclude" placeholder="-test -sample">
+            </div>
+          </div>
+          <div class="card-actions" style="margin-top: 1rem;">
+            <button id="btn-save-new-template" class="primary">Save Template</button>
+            <button id="btn-cancel-new-template">Cancel</button>
+          </div>
+        </div>
+
+        <div id="templates-list" class="grid-list"></div>
+      </div>
+
+      <div class="tab-content" id="tab-crt">
+        <div class="toolbar">
+          <div>
+            <h2>CRT.SH Certificate Transparency Scope</h2>
+            <p class="section-desc">Query public TLS certificates on <code>crt.sh</code> to identify subdomains and multi-tenant hostnames.</p>
+          </div>
+          <div class="toolbar-actions">
+            <button id="btn-fetch-crt" class="primary">Fetch Subdomains</button>
+          </div>
+        </div>
+
+        <div class="guidance-callout guidance-item">
+          <strong>💡 Subdomain Subtraction Strategy:</strong>
+          <p>Select known, primary subdomains (like <code>www</code>, <code>blog</code>, <code>shop</code>) and click <em>"Append Selected as Exclusions"</em>. Vantage will add <code>-site:host</code> exclusions into your composer, forcing search engines to reveal hidden shadow IT, unlinked staging environments, and legacy systems.</p>
+        </div>
+
+        <div class="crt-actions-bar">
+          <input type="text" id="crt-filter" placeholder="Filter subdomains...">
+          <button id="btn-crt-select-all">Select All</button>
+          <button id="btn-crt-deselect-all">Deselect All</button>
+          <button id="btn-append-crt" class="primary">Append Selected as Exclusions</button>
+          <button id="btn-crt-to-audit" title="Log selected subdomains into Audit Log">Send Selected to Audit Log</button>
+        </div>
+        <div class="crt-results" id="crt-results"></div>
+      </div>
+
+      <div class="tab-content" id="tab-infra">
+        <div class="toolbar">
+          <div>
+            <h2>Global Infrastructure & Netblock Reconnaissance</h2>
+            <p class="section-desc">Discover related apex domains (nameservers, SOA, mail gateways, SSL SANs) and official IP netblocks worldwide (ARIN, RIPE, APNIC, RDAP).</p>
+          </div>
+          <div class="toolbar-actions">
+            <button id="btn-toggle-shodan-settings" class="btn-shodan-byok" title="Configure Shodan BYOK API key or inspect status">
+              <span class="byok-icon">🔑</span>
+              <span class="byok-label">Shodan BYOK</span>
+              <span id="shodan-active-badge" class="byok-badge" style="display: none;">Active</span>
+            </button>
+            <button id="btn-fetch-infra" class="primary">Discover Related Domains & Netblocks</button>
+          </div>
+        </div>
+
+        <div id="shodan-settings-drawer" class="shodan-settings-drawer" style="display: none;">
+          <div class="shodan-drawer-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span style="font-size: 1.3rem;">🔑</span>
+              <div>
+                <strong style="color: #fbbf24; font-size: 0.95rem;">Shodan Integration & API Settings</strong>
+                <p class="section-desc" style="font-size: 0.75rem; margin: 0.1rem 0 0 0;">
+                  Choose between free out-of-the-box open intelligence or your personal Shodan account API key.
+                </p>
+              </div>
+            </div>
+            <button type="button" id="btn-close-shodan-drawer" class="drawer-close-btn" title="Close Settings">✕</button>
+          </div>
+
+          <div class="shodan-tier-grid">
+            <div class="shodan-tier-card active-tier">
+              <div class="tier-badge-pill green">Active &bull; Built-in</div>
+              <strong style="color: #4ade80;">Shodan InternetDB (Free)</strong>
+              <p>Completely free and open. <strong>Requires no API key or account</strong>. Automatically queries open ports, CPE software tags, hostnames, and known CVEs.</p>
+            </div>
+            <div class="shodan-tier-card byok-tier">
+              <div class="tier-badge-pill amber">Optional Upgrade</div>
+              <strong style="color: #fbbf24;">Personal Shodan API (BYOK)</strong>
+              <p>Bring Your Own Key to unlock deep raw banner grabs, operating system detection, ISP/organization metadata, and host history.</p>
+            </div>
+          </div>
+
+          <div class="shodan-input-box">
+            <label for="f-shodan-key" style="font-size: 0.75rem; color: #e2e8f0; font-weight: 600; display: block; margin-bottom: 0.35rem;">
+              Personal Shodan API Key (Stored locally in your browser):
+            </label>
+            <div class="input-inline">
+              <input type="password" id="f-shodan-key" placeholder="Paste personal Shodan API key from account.shodan.io..." autocomplete="off">
+              <button type="button" id="btn-save-shodan-key" class="primary">Save & Validate Key</button>
+              <button type="button" id="btn-clear-shodan-key">Clear</button>
+            </div>
+            <div id="shodan-key-status" class="shodan-key-status" style="display: none;"></div>
+          </div>
+        </div>
+
+        <div class="guidance-callout guidance-item">
+          <strong>💡 Eliminating Apex Domain Myopia:</strong>
+          <p>Companies frequently host their consumer brand on one domain (e.g. <code>brandapp.com</code>) while running corporate email, internal SSO, and sensitive systems on sibling apex domains (e.g. <code>brand.com</code>) or dedicated corporate IP space. Discovering these assets expands your exposure audit beyond the initial URL.</p>
+        </div>
+
+        <div class="infra-search-bar">
+          <div class="input-inline" style="flex: 1;">
+            <input type="text" id="infra-keyword" placeholder="Target domain or organization keyword (e.g. example.com or CompanyName)">
+            <button type="button" id="btn-infra-custom-search">Search ARIN / RIPE / DNS</button>
+          </div>
+          <span id="infra-status"></span>
+        </div>
+
+        <div class="infra-section">
+          <div class="infra-section-header">
+            <h3>Related Corporate & Sibling Domains (<span id="infra-domains-count">0</span>)</h3>
+            <span class="section-desc">Discovered via DNS infrastructure (NS/SOA/MX) and Certificate Transparency multi-SAN cross-links.</span>
+          </div>
+          <div id="infra-domains-list" class="infra-grid"></div>
+        </div>
+
+        <div class="infra-section" style="margin-top: 1.8rem;">
+          <div class="infra-section-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div>
+                <h3>Global Registered Corporate IP Netblocks (<span id="infra-nets-count">0</span>)</h3>
+                <span class="section-desc">Datacenter allocations and network blocks registered with ARIN (Americas), RIPE (Europe), and RDAP.</span>
+              </div>
+              <div id="infra-net-actions" style="display: none; gap: 0.5rem;">
+                <button id="btn-copy-netblocks">Copy CIDRs</button>
+                <button id="btn-nets-to-audit" class="primary">Send Nets to Audit Log</button>
+              </div>
+            </div>
+          </div>
+          <div class="guidance-callout guidance-item" style="margin-top: 0.5rem; margin-bottom: 0.75rem;">
+            <strong>💡 Global RIRs, Reverse DNS & Port Exposure:</strong>
+            <p>Datacenter allocations are discovered across ARIN (Americas), RIPE (Europe), and RDAP. Use <strong>Probe PTRs</strong> to sample reverse DNS records for internal gateways (VPN, mail, firewalls) and <strong>Check Ports</strong> to query Shodan InternetDB for open ports (SSH, RDP, SNMP) and unpatched CVEs without actively scanning.</p>
+          </div>
+          <div id="infra-nets-list" class="infra-grid"></div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-emails">
+        <div class="toolbar">
+          <div>
+            <h2>Email Discovery & Public Identity</h2>
+            <p class="section-desc">Passively query public PGP and open directory registries (<code>keyserver.ubuntu.com</code>) for verified domain emails.</p>
+          </div>
+        </div>
+
+        <div id="email-pattern-banner" class="pattern-banner" style="display: none;">
+          <div class="pattern-info">
+            <span class="pattern-badge">🎯 Detected Convention</span>
+            <code id="pattern-scheme" class="pattern-scheme"></code>
+            <span id="pattern-confidence" class="pattern-confidence"></span>
+          </div>
+          <button type="button" id="btn-dork-pattern" class="step-btn">Dork for this naming format</button>
+        </div>
+
+        <div class="guidance-callout guidance-item">
+          <strong>💡 OpenPGP Identity Intelligence:</strong>
+          <p>Public keyservers index real technical personnel who configured Git signing or package management. Vantage extracts the creation year to distinguish active employees from legacy keys and analyzes local parts to deduce the corporate email convention.</p>
+        </div>
+
+        <div class="crt-controls">
+          <button id="btn-fetch-emails" class="primary">Discover Emails for Target Domain</button>
+          <span id="email-status"></span>
+        </div>
+        <div id="email-actions-bar" class="crt-actions-bar" style="display: none;">
+          <input type="text" id="email-filter" placeholder="Filter emails or names...">
+          <button id="btn-email-select-all">Select All</button>
+          <button id="btn-email-deselect-all">Deselect All</button>
+          <button id="btn-email-to-audit" class="primary">Send Selected to Audit Log</button>
+          <button id="btn-email-copy">Copy Selected</button>
+        </div>
+        <div class="crt-results" id="email-results"></div>
+      </div>
+
+      <div class="tab-content" id="tab-profiles">
+        <div class="toolbar">
+          <div>
+            <h2>Saved Profiles & Workspaces</h2>
+            <p class="section-desc">Quickly restore specific target domain audits and operator configurations.</p>
+          </div>
+        </div>
+        <div id="profiles-list" class="grid-list"></div>
+      </div>
+
+      <div class="tab-content" id="tab-audit">
+        <div class="toolbar">
+          <div>
+            <h2>Audit Findings & Triage Log</h2>
+            <p class="section-desc">Track and tag discovered exposures, then export formatted Obsidian Markdown reports.</p>
+          </div>
+          <div class="toolbar-actions">
+            <select id="audit-filter-status" title="Filter list by triage status">
+              <option value="all">All Statuses</option>
+              <option value="investigating">Under Review</option>
+              <option value="hit">Confirmed</option>
+              <option value="false_positive">False Positive</option>
+              <option value="resolved">Fixed</option>
+            </select>
+            <button id="btn-clear-fp" title="Remove all False Positive findings">Clear False Positives</button>
+            <button id="btn-clear-fixed" title="Remove all Fixed findings">Clear Fixed Items</button>
+            <button id="btn-clear-audit">Clear All Logs</button>
+            <button id="btn-export-obsidian" class="primary">Export to Obsidian (.md)</button>
+          </div>
+        </div>
+
+        <div class="guidance-callout guidance-item">
+          <strong>💡 Obsidian Workflow & Triage:</strong>
+          <p>Right-click any link or page in Firefox and select <em>"Send Link to Vantage Audit Log"</em> to record exposures without leaving your research tab. Categorize items as <em>Under Review</em>, <em>Confirmed</em>, <em>False Positive</em>, or <em>Fixed</em>, then export directly into your Obsidian vault.</p>
+        </div>
+
+        <div class="audit-form">
+          <div class="input-inline">
+            <input type="text" id="a-url" placeholder="Finding URL (e.g. https://staging.example.com/.env)">
+            <select id="a-status">
+              <option value="investigating">Under Review</option>
+              <option value="hit">Confirmed</option>
+              <option value="false_positive">False Positive</option>
+              <option value="resolved">Fixed</option>
+            </select>
+          </div>
+          <input type="text" id="a-query" placeholder="Associated Query (pre-fills from active composer)">
+          <textarea id="a-notes" placeholder="Analyst notes, risk severity, observation... (Markdown supported)"></textarea>
+          <button id="btn-log-finding" class="primary">Log Finding</button>
+        </div>
+
+        <div class="audit-section-header" style="margin-top: 2rem;">
+          <h3>Logged Findings (<span id="audit-count">0</span>)</h3>
+        </div>
+        <div id="audit-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Methodology Help Modal -->
+  <div id="methodology-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content methodology-modal-content">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span class="modal-step-badge" id="m-modal-step-num">Step 1 of 6</span>
+          <h3 id="m-modal-title" style="margin: 0; font-size: 1.05rem; color: #f8fafc;">Scope Target</h3>
+        </div>
+        <button type="button" id="btn-close-methodology-modal" class="modal-close-btn" title="Close Modal (Esc)">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="methodology-section">
+          <div class="methodology-section-title">
+            <span class="section-icon">🎯</span>
+            <strong>What It Does</strong>
+          </div>
+          <p id="m-modal-what" class="methodology-text"></p>
+        </div>
+
+        <div class="methodology-section highlight-section">
+          <div class="methodology-section-title">
+            <span class="section-icon">💡</span>
+            <strong style="color: #fbbf24;">Why It Matters (The "Why")</strong>
+          </div>
+          <p id="m-modal-why" class="methodology-text"></p>
+        </div>
+
+        <div class="methodology-section tip-section">
+          <div class="methodology-section-title">
+            <span class="section-icon">🛡️</span>
+            <strong style="color: #93c5fd;">Analyst Pro-Tip & Impact</strong>
+          </div>
+          <p id="m-modal-tip" class="methodology-text"></p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="modal-nav-group">
+          <button type="button" id="btn-prev-step-help" class="btn-ghost" title="Previous Step">&larr; Previous</button>
+          <button type="button" id="btn-next-step-help" class="btn-ghost" title="Next Step">Next &rarr;</button>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" id="btn-modal-step-action" class="primary">Execute Step</button>
+          <button type="button" id="btn-close-modal-secondary">Got It</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="dashboard.js"></script>
+</body>
+</html>
