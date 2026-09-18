@@ -88,6 +88,8 @@ See [DISTRIBUTION.md](DISTRIBUTION.md) for full store submission guidance and pe
 - **Zero-Packet Passive Scoping**: Vantage queries public OSINT endpoints (crt.sh, Cloudflare/Google DoH, ARIN/RIPE RDAP, OpenPGP keyservers, Shodan). It never sends malicious payloads or direct scans to target web servers.
 - **Local Storage**: All templates, custom profiles, and audit records are saved strictly in your local browser storage (`browser.storage.local`).
 
+See our full [Privacy Policy](PRIVACY.md) for complete details.
+
 ---
 
 ## 📄 License

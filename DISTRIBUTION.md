@@ -54,6 +54,7 @@ The automated build pipeline produces store-ready zip archives inside the `dist/
      `Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.`
    - **Category:** `Developer Tools` or `Productivity`
    - **Icon:** Upload `icons/icon-128.png`.
+   - **Privacy Policy URL:** `https://github.com/mrnickpeer/Vantage/blob/main/PRIVACY.md`
    - **Screenshots:** Provide at least one 1280x800 or 640x400 screenshot of the Vantage dashboard in action.
 
 ---
