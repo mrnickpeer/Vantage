@@ -123,6 +123,7 @@
           <button id="btn-save-profile">Save Profile</button>
           <button id="btn-save-template">Save as Template</button>
           <button id="btn-wayback" title="Lookup domain on Wayback Machine">Wayback</button>
+          <button id="btn-urlscan" title="Lookup domain historical scans on urlscan.io">urlscan</button>
         </div>
       </section>
     </aside>
@@ -169,9 +170,9 @@
               <button type="button" class="step-help-btn" data-step="3" title="Methodology: What & Why for Step 3">?</button>
               <span class="step-status">⏳</span>
             </div>
-            <strong>Infrastructure & Nets</strong>
-            <p>Sibling apexes, RIRs & Shodan.</p>
-            <button type="button" id="step-btn-infra" class="step-btn">Open Infrastructure</button>
+            <strong>DNS & Infrastructure</strong>
+            <p>DNS zone, siblings & RIRs.</p>
+            <button type="button" id="step-btn-infra" class="step-btn">Open DNS & Infra</button>
           </div>
           <div class="step-card" id="step-emails">
             <div class="step-header">
@@ -208,7 +209,7 @@
       <nav class="tabs">
         <button class="tab-btn active" data-target="tab-templates">Templates</button>
         <button class="tab-btn" data-target="tab-crt">CRT.SH Scope</button>
-        <button class="tab-btn" data-target="tab-infra">Infrastructure & Netblocks</button>
+        <button class="tab-btn" data-target="tab-infra">DNS & Infrastructure</button>
         <button class="tab-btn" data-target="tab-emails">Emails</button>
         <button class="tab-btn" data-target="tab-profiles">Profiles</button>
         <button class="tab-btn" data-target="tab-audit">Audit Log</button>
@@ -300,21 +301,33 @@
           <p>Select known, primary subdomains (like <code>www</code>, <code>blog</code>, <code>shop</code>) and click <em>"Append Selected as Exclusions"</em>. Vantage will add <code>-site:host</code> exclusions into your composer, forcing search engines to reveal hidden shadow IT, unlinked staging environments, and legacy systems.</p>
         </div>
 
-        <div class="crt-actions-bar">
+        <div class="crt-controls">
+          <div class="crt-status-wrap">
+            <span id="crt-status" class="crt-status-text">Ready to discover subdomains for target.</span>
+          </div>
+          <button type="button" id="btn-cancel-crt" class="btn-ghost btn-sm" style="display: none;">Cancel Request</button>
+        </div>
+
+        <div id="crt-actions-bar" class="crt-actions-bar" style="display: none;">
           <input type="text" id="crt-filter" placeholder="Filter subdomains...">
           <button id="btn-crt-select-all">Select All</button>
           <button id="btn-crt-deselect-all">Deselect All</button>
           <button id="btn-append-crt" class="primary">Append Selected as Exclusions</button>
           <button id="btn-crt-to-audit" title="Log selected subdomains into Audit Log">Send Selected to Audit Log</button>
         </div>
-        <div class="crt-results" id="crt-results"></div>
+        <div class="crt-results" id="crt-results">
+          <div class="crt-empty-state">
+            <span class="crt-empty-icon">🔍</span>
+            <p>Enter a target domain in the left composer and click <strong>Fetch Subdomains</strong> to query public Certificate Transparency logs.</p>
+          </div>
+        </div>
       </div>
 
       <div class="tab-content" id="tab-infra">
         <div class="toolbar">
           <div>
-            <h2>Global Infrastructure & Netblock Reconnaissance</h2>
-            <p class="section-desc">Discover related apex domains (nameservers, SOA, mail gateways, SSL SANs) and official IP netblocks worldwide (ARIN, RIPE, APNIC, RDAP).</p>
+            <h2>DNS Zone & Infrastructure Reconnaissance</h2>
+            <p class="section-desc">Authoritative DNS records (NS, MX, TXT, SPF, DMARC), sibling apex domains, and registered corporate IP netblocks worldwide.</p>
           </div>
           <div class="toolbar-actions">
             <button id="btn-toggle-shodan-settings" class="btn-shodan-byok" title="Configure Shodan BYOK API key or inspect status">
@@ -322,7 +335,7 @@
               <span class="byok-label">Shodan BYOK</span>
               <span id="shodan-active-badge" class="byok-badge" style="display: none;">Active</span>
             </button>
-            <button id="btn-fetch-infra" class="primary">Discover Related Domains & Netblocks</button>
+            <button id="btn-fetch-infra" class="primary">Discover DNS, Domains & Netblocks</button>
           </div>
         </div>
 
@@ -377,6 +390,62 @@
             <button type="button" id="btn-infra-custom-search">Search ARIN / RIPE / DNS</button>
           </div>
           <span id="infra-status"></span>
+        </div>
+
+        <!-- DNS Zone Intelligence Section -->
+        <div class="infra-section" id="dns-zone-section" style="display: none; margin-bottom: 1.5rem;">
+          <div class="infra-section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3>DNS Zone Intelligence & Records (<span id="dns-records-count">0</span>)</h3>
+              <span class="section-desc">Authoritative nameservers, mail exchange gateways, SPF/TXT verification tokens, and apex IPs via DoH.</span>
+            </div>
+            <div id="dns-zone-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+              <button type="button" id="btn-copy-dns" class="btn-sm">Copy DNS Records</button>
+              <button type="button" id="btn-dns-to-audit" class="btn-sm primary">Send DNS to Audit Log</button>
+            </div>
+          </div>
+
+          <div id="dns-saas-banner" class="dns-saas-banner" style="display: none;">
+            <div class="dns-saas-title">
+              <span>🏢</span>
+              <strong>Detected Cloud & SaaS Ecosystem (from TXT/SPF):</strong>
+            </div>
+            <div id="dns-saas-tags" class="dns-saas-tags"></div>
+          </div>
+
+          <div class="dns-cards-grid">
+            <div class="dns-card">
+              <div class="dns-card-header">
+                <span class="dns-badge ns-badge">NS</span>
+                <strong>Nameservers (<span id="dns-ns-count">0</span>)</strong>
+              </div>
+              <div id="dns-ns-list" class="dns-card-body"></div>
+            </div>
+
+            <div class="dns-card">
+              <div class="dns-card-header">
+                <span class="dns-badge mx-badge">MX</span>
+                <strong>Mail Gateways (<span id="dns-mx-count">0</span>)</strong>
+              </div>
+              <div id="dns-mx-list" class="dns-card-body"></div>
+            </div>
+
+            <div class="dns-card">
+              <div class="dns-card-header">
+                <span class="dns-badge a-badge">A / SOA</span>
+                <strong>Apex Hosts & Authority</strong>
+              </div>
+              <div id="dns-apex-list" class="dns-card-body"></div>
+            </div>
+
+            <div class="dns-card">
+              <div class="dns-card-header">
+                <span class="dns-badge txt-badge">TXT</span>
+                <strong>Text Records & DMARC (<span id="dns-txt-count">0</span>)</strong>
+              </div>
+              <div id="dns-txt-list" class="dns-card-body"></div>
+            </div>
+          </div>
         </div>
 
         <div class="infra-section">
@@ -478,6 +547,7 @@
         <div class="guidance-callout guidance-item">
           <strong>💡 Obsidian Workflow & Triage:</strong>
           <p>Right-click any link or page in Firefox and select <em>"Send Link to Vantage Audit Log"</em> to record exposures without leaving your research tab. Categorize items as <em>Under Review</em>, <em>Confirmed</em>, <em>False Positive</em>, or <em>Fixed</em>, then export directly into your Obsidian vault.</p>
+          <p style="margin-top: 0.4rem; color: #94a3b8;"><strong>🛡️ Safe OPSEC Triage:</strong> Avoid directly clicking sensitive finding links (which sends live HTTP requests from your browser). Instead, use the <strong>urlscan</strong> button on any finding to inspect cached snapshots, DOM hashes, and server headers passively.</p>
         </div>
 
         <div class="audit-form">
@@ -492,7 +562,10 @@
           </div>
           <input type="text" id="a-query" placeholder="Associated Query (pre-fills from active composer)">
           <textarea id="a-notes" placeholder="Analyst notes, risk severity, observation... (Markdown supported)"></textarea>
-          <button id="btn-log-finding" class="primary">Log Finding</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-log-finding" class="primary" style="flex: 1;">Log Finding</button>
+            <button type="button" id="btn-audit-urlscan-form" class="btn-ghost" title="Passively check historical scans on urlscan.io for this URL before logging">🔍 urlscan Lookup</button>
+          </div>
         </div>
 
         <div class="audit-section-header" style="margin-top: 2rem;">

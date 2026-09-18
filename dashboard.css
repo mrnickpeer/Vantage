@@ -278,6 +278,108 @@ button.primary:hover { background: var(--primary-hover); }
 }
 .crt-item { display: flex; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem; align-items: center; }
 
+.crt-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.crt-status-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.crt-status-text.loading {
+  color: #93c5fd;
+}
+
+.crt-status-text.success {
+  color: #4ade80;
+}
+
+.crt-status-text.error {
+  color: #f87171;
+}
+
+.btn-sm {
+  font-size: 0.75rem !important;
+  padding: 0.3rem 0.65rem !important;
+}
+
+.spinner-inline {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(147, 197, 253, 0.3);
+  border-radius: 50%;
+  border-top-color: #60a5fa;
+  animation: crt-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes crt-spin {
+  to { transform: rotate(360deg); }
+}
+
+.crt-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  gap: 0.5rem;
+}
+
+.crt-empty-icon {
+  font-size: 1.8rem;
+  opacity: 0.6;
+}
+
+.crt-error-card {
+  grid-column: 1 / -1;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.crt-error-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.crt-error-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.crt-error-title {
+  font-weight: 600;
+  color: #fca5a5;
+  font-size: 0.95rem;
+}
+
+.crt-error-msg {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+
+.crt-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
 .audit-form { display: grid; gap: 0.75rem; background: var(--surface); padding: 1.25rem; border-radius: 6px; }
 .audit-form textarea { height: 80px; resize: vertical; }
 
@@ -339,6 +441,22 @@ button.primary:hover { background: var(--primary-hover); }
   font-size: 0.7rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
+}
+.audit-entry-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.btn-urlscan-action {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+.btn-urlscan-action:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: #38bdf8;
+  color: #7dd3fc;
 }
 
 .composer {
@@ -827,6 +945,159 @@ button.primary:hover { background: var(--primary-hover); }
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 0.75rem;
 }
+
+/* DNS Zone Intelligence Section */
+.dns-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+}
+
+.dns-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dns-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.45rem;
+}
+
+.dns-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+}
+
+.dns-badge.ns-badge { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+.dns-badge.mx-badge { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+.dns-badge.a-badge { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+.dns-badge.txt-badge { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+.dns-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 240px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding-right: 0.25rem;
+}
+
+.dns-card-empty {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 0.5rem 0.25rem;
+  font-style: italic;
+}
+
+.dns-record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.28rem 0.45rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.dns-record-val {
+  flex: 1;
+  color: #e2e8f0;
+}
+
+.dns-tag-provider {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.dns-tag-cloud {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.dns-tag-gateway {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.dns-tag-selfhost {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  font-weight: 600;
+}
+
+.dns-saas-banner {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dns-saas-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #93c5fd;
+}
+
+.dns-saas-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.dns-saas-chip {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  font-weight: 500;
+}
+
+.dmarc-status-pill {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.dmarc-pass { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.35); }
+.dmarc-warn { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid rgba(245, 158, 11, 0.35); }
+.dmarc-fail { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
 
 .domain-card, .netblock-card {
   background: rgba(0, 0, 0, 0.25);

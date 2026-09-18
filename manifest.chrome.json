@@ -20,7 +20,8 @@
     "https://cloudflare-dns.com/*",
     "https://dns.google/*",
     "https://internetdb.shodan.io/*",
-    "https://api.shodan.io/*"
+    "https://api.shodan.io/*",
+    "https://urlscan.io/*"
   ],
   "background": {
     "service_worker": "background.js"

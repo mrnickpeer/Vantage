@@ -92,6 +92,12 @@ See our full [Privacy Policy](PRIVACY.md) for complete details.
 
 ---
 
+## 🗺️ Product Roadmap
+
+Looking to see what's planned next? Check out our [Feature & Engineering Roadmap](ROADMAP.md) covering upcoming milestones for virtualization, Burp/Caido export integration, and interactive attack surface visualization.
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).

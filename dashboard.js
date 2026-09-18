@@ -136,6 +136,7 @@ let currentCrtHosts = [];
 let currentDiscoveredEmails = [];
 let currentRelatedDomains = [];
 let currentNetblocks = [];
+let currentDnsZone = null;
 let toastTimeout = null;
 
 const els = {
@@ -154,6 +155,12 @@ const els = {
   auditCount: document.getElementById('audit-count'),
   auditQuery: document.getElementById('a-query'),
   auditFilterStatus: document.getElementById('audit-filter-status'),
+  btnFetchCrt: document.getElementById('btn-fetch-crt'),
+  crtStatus: document.getElementById('crt-status'),
+  crtActionsBar: document.getElementById('crt-actions-bar'),
+  crtFilter: document.getElementById('crt-filter'),
+  crtResults: document.getElementById('crt-results'),
+  btnCancelCrt: document.getElementById('btn-cancel-crt'),
   emailStatus: document.getElementById('email-status'),
   emailActionsBar: document.getElementById('email-actions-bar'),
   emailFilter: document.getElementById('email-filter'),
@@ -192,7 +199,20 @@ const els = {
   shodanKeyInput: document.getElementById('f-shodan-key'),
   btnSaveShodanKey: document.getElementById('btn-save-shodan-key'),
   btnClearShodanKey: document.getElementById('btn-clear-shodan-key'),
-  shodanKeyStatus: document.getElementById('shodan-key-status')
+  shodanKeyStatus: document.getElementById('shodan-key-status'),
+  dnsZoneSection: document.getElementById('dns-zone-section'),
+  dnsRecordsCount: document.getElementById('dns-records-count'),
+  btnCopyDns: document.getElementById('btn-copy-dns'),
+  btnDnsToAudit: document.getElementById('btn-dns-to-audit'),
+  dnsSaasBanner: document.getElementById('dns-saas-banner'),
+  dnsSaasTags: document.getElementById('dns-saas-tags'),
+  dnsNsList: document.getElementById('dns-ns-list'),
+  dnsNsCount: document.getElementById('dns-ns-count'),
+  dnsMxList: document.getElementById('dns-mx-list'),
+  dnsMxCount: document.getElementById('dns-mx-count'),
+  dnsApexList: document.getElementById('dns-apex-list'),
+  dnsTxtList: document.getElementById('dns-txt-list'),
+  dnsTxtCount: document.getElementById('dns-txt-count')
 };
 
 function updateShodanUiState() {
@@ -476,6 +496,7 @@ function bindEvents() {
   document.getElementById('btn-save-profile').addEventListener('click', saveProfile);
   document.getElementById('btn-save-template').addEventListener('click', saveComposerAsTemplate);
   document.getElementById('btn-wayback').addEventListener('click', openWayback);
+  document.getElementById('btn-urlscan').addEventListener('click', openUrlscan);
 
   // Tab switching
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -509,12 +530,25 @@ function bindEvents() {
   document.getElementById('btn-reset-defaults').addEventListener('click', restoreDefaultTemplates);
 
   // CRT.SH Scope
-  document.getElementById('btn-fetch-crt').addEventListener('click', fetchCrt);
-  document.getElementById('crt-filter').addEventListener('input', filterCrtResults);
-  document.getElementById('btn-crt-select-all').addEventListener('click', () => toggleCrtSelection(true));
-  document.getElementById('btn-crt-deselect-all').addEventListener('click', () => toggleCrtSelection(false));
-  document.getElementById('btn-append-crt').addEventListener('click', appendCrtExclusions);
-  document.getElementById('btn-crt-to-audit').addEventListener('click', sendCrtToAuditLog);
+  if (els.btnFetchCrt) els.btnFetchCrt.addEventListener('click', () => fetchCrt('wildcard'));
+  if (els.crtFilter) els.crtFilter.addEventListener('input', filterCrtResults);
+  const btnCrtSelectAll = document.getElementById('btn-crt-select-all');
+  if (btnCrtSelectAll) btnCrtSelectAll.addEventListener('click', () => toggleCrtSelection(true));
+  const btnCrtDeselectAll = document.getElementById('btn-crt-deselect-all');
+  if (btnCrtDeselectAll) btnCrtDeselectAll.addEventListener('click', () => toggleCrtSelection(false));
+  const btnAppendCrt = document.getElementById('btn-append-crt');
+  if (btnAppendCrt) btnAppendCrt.addEventListener('click', appendCrtExclusions);
+  const btnCrtToAudit = document.getElementById('btn-crt-to-audit');
+  if (btnCrtToAudit) btnCrtToAudit.addEventListener('click', sendCrtToAuditLog);
+  if (els.btnCancelCrt) els.btnCancelCrt.addEventListener('click', cancelCrtFetch);
+
+  // DNS Zone Intelligence
+  if (els.btnCopyDns) els.btnCopyDns.addEventListener('click', copyDnsSummary);
+  if (els.btnDnsToAudit) els.btnDnsToAudit.addEventListener('click', sendDnsToAuditLog);
+  if (els.dnsApexList) els.dnsApexList.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="check-apex-shodan"]');
+    if (btn && btn.dataset.ip) checkSingleIpShodan(btn.dataset.ip, btn);
+  });
 
   // Infrastructure & Global Netblock Scope
   if (els.btnFetchInfra) els.btnFetchInfra.addEventListener('click', () => fetchInfra());
@@ -629,6 +663,10 @@ function bindEvents() {
   if (els.auditFilterStatus) {
     els.auditFilterStatus.addEventListener('change', renderAuditLogs);
   }
+  const btnFormUrlscan = document.getElementById('btn-audit-urlscan-form');
+  if (btnFormUrlscan) {
+    btnFormUrlscan.addEventListener('click', openFormUrlscan);
+  }
 
   // Backup & Restore
   document.getElementById('btn-export-data').addEventListener('click', exportData);
@@ -660,6 +698,7 @@ function bindEvents() {
     const action = btn.dataset.action;
     const id = btn.dataset.id;
     if (action === 'delete') deleteAuditFinding(id);
+    else if (action === 'urlscan') openAuditUrlscan(id);
   });
 
   document.getElementById('audit-list').addEventListener('change', (e) => {
@@ -796,6 +835,23 @@ function openWayback() {
   }
   const url = `https://web.archive.org/web/*/${encodeURIComponent(domain)}`;
   window.open(url, '_blank');
+}
+
+// urlscan.io Historical Search Shortcut (Spot A)
+function openUrlscan() {
+  const raw = els.domain.value.trim();
+  if (!raw) {
+    alert('Please enter a target domain first.');
+    return;
+  }
+  const cleanDomain = raw.replace(/^https?:\/\//i, '').replace(/[\/:]+.*$/, '').trim().toLowerCase();
+  if (!cleanDomain) {
+    alert('Please enter a valid target domain.');
+    return;
+  }
+  const url = `https://urlscan.io/search/#domain:${encodeURIComponent(cleanDomain)}`;
+  window.open(url, '_blank');
+  showToast(`Opening urlscan search for ${cleanDomain}`);
 }
 
 // Dropdowns & Templates
@@ -1037,33 +1093,139 @@ window.deleteProfile = async (id) => {
 };
 
 // CRT.SH Certificate Transparency
-async function fetchCrt() {
-  const domain = els.domain.value.trim();
-  const status = document.getElementById('crt-status');
-  const actionsBar = document.getElementById('crt-actions-bar');
-  const results = document.getElementById('crt-results');
+let crtAbortController = null;
+let crtTimerInterval = null;
+
+function cancelCrtFetch() {
+  if (crtAbortController) {
+    crtAbortController.abort();
+    crtAbortController = null;
+  }
+  if (crtTimerInterval) {
+    clearInterval(crtTimerInterval);
+    crtTimerInterval = null;
+  }
+  const status = document.getElementById('crt-status') || els.crtStatus;
+  if (status) {
+    status.className = 'crt-status-text';
+    status.innerText = 'Request cancelled by user.';
+  }
+  const cancelBtn = document.getElementById('btn-cancel-crt') || els.btnCancelCrt;
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  const fetchBtn = document.getElementById('btn-fetch-crt') || els.btnFetchCrt;
+  if (fetchBtn) {
+    fetchBtn.disabled = false;
+    fetchBtn.innerHTML = 'Fetch Subdomains';
+  }
+}
+
+async function fetchCrt(queryMode = 'wildcard') {
+  if (crtAbortController) {
+    crtAbortController.abort();
+    crtAbortController = null;
+  }
+  if (crtTimerInterval) {
+    clearInterval(crtTimerInterval);
+    crtTimerInterval = null;
+  }
+
+  const rawDomain = els.domain ? els.domain.value.trim() : '';
+  const domain = extractApexDomain(rawDomain) || rawDomain.toLowerCase().replace(/^https?:\/\//i, '').split('/')[0].split(':')[0];
+
+  const status = document.getElementById('crt-status') || els.crtStatus;
+  const actionsBar = document.getElementById('crt-actions-bar') || els.crtActionsBar;
+  const results = document.getElementById('crt-results') || els.crtResults;
+  const cancelBtn = document.getElementById('btn-cancel-crt') || els.btnCancelCrt;
+  const fetchBtn = document.getElementById('btn-fetch-crt') || els.btnFetchCrt;
 
   if (!domain) {
-    status.innerText = 'Target domain is required.';
+    if (status) {
+      status.className = 'crt-status-text error';
+      status.innerText = 'Target domain is required (enter in composer).';
+    }
+    if (results) {
+      results.innerHTML = `
+        <div class="crt-empty-state">
+          <span class="crt-empty-icon">⚠️</span>
+          <p>Please enter a target domain in the left panel first (e.g. <code>example.com</code>).</p>
+        </div>
+      `;
+    }
     return;
   }
-  
-  status.innerText = 'Querying crt.sh Certificate Logs...';
-  results.innerHTML = '';
-  actionsBar.style.display = 'none';
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  if (actionsBar) actionsBar.style.display = 'none';
+  if (fetchBtn) {
+    fetchBtn.disabled = true;
+    fetchBtn.innerHTML = `<span class="spinner-inline"></span> Fetching...`;
+  }
+  if (cancelBtn) cancelBtn.style.display = 'inline-block';
+
+  const isWildcard = queryMode === 'wildcard';
+  const queryUrl = isWildcard
+    ? `https://crt.sh/?q=%.${encodeURIComponent(domain)}&output=json`
+    : `https://crt.sh/?q=${encodeURIComponent(domain)}&output=json`;
+
+  const modeLabel = isWildcard ? `wildcard log index (%.${domain})` : `apex & SAN index (${domain})`;
+  const startTime = Date.now();
+
+  if (status) {
+    status.className = 'crt-status-text loading';
+    status.innerHTML = `<span class="spinner-inline"></span> Querying crt.sh ${escapeHtml(modeLabel)}... <strong id="crt-elapsed-sec">0s</strong>`;
+  }
+
+  if (results) {
+    results.innerHTML = `
+      <div class="crt-empty-state">
+        <span class="spinner-inline" style="width: 24px; height: 24px; border-width: 3px;"></span>
+        <p>Connecting to public Certificate Transparency logs for <strong>${escapeHtml(domain)}</strong>...</p>
+        <span style="font-size: 0.8rem; color: var(--text-muted); max-width: 480px;">
+          ${isWildcard ? 'Wildcard log searches can take 15–30 seconds during high traffic. Please keep this tab open.' : 'Performing fast indexed certificate query...'}
+        </span>
+      </div>
+    `;
+  }
+
+  // Update elapsed seconds live
+  crtTimerInterval = setInterval(() => {
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    const secEl = document.getElementById('crt-elapsed-sec');
+    if (secEl) secEl.innerText = `${elapsed}s`;
+
+    const subtextEl = document.getElementById('crt-status-subtext');
+    if (elapsed >= 10 && elapsed < 20) {
+      if (!subtextEl && status) {
+        const span = document.createElement('span');
+        span.id = 'crt-status-subtext';
+        span.style.cssText = 'font-size: 0.75rem; color: #fbbf24; margin-left: 0.5rem;';
+        span.innerText = '(Server busy, still scanning records...)';
+        status.appendChild(span);
+      }
+    } else if (elapsed >= 20) {
+      if (subtextEl) {
+        subtextEl.innerText = '(crt.sh PostgreSQL engine running deep query; hanging tight...)';
+      }
+    }
+  }, 1000);
+
+  crtAbortController = new AbortController();
+  const timeoutMs = isWildcard ? 35000 : 15000;
+  const timeoutId = setTimeout(() => {
+    if (crtAbortController) crtAbortController.abort();
+  }, timeoutMs);
 
   try {
-    const res = await fetch(`https://crt.sh/?q=%.${encodeURIComponent(domain)}&output=json`, {
-      signal: controller.signal
+    const res = await fetch(queryUrl, {
+      signal: crtAbortController.signal
     });
     clearTimeout(timeoutId);
 
     if (!res.ok) {
       if (res.status === 502 || res.status === 504) {
-        throw new Error(`crt.sh server is overloaded (HTTP ${res.status}). Try again shortly.`);
+        throw new Error(`crt.sh server is overloaded (HTTP ${res.status} Gateway Timeout). Sectigo database query exceeded time limits.`);
+      }
+      if (res.status === 429) {
+        throw new Error('crt.sh rate limit encountered (HTTP 429). Please wait 30 seconds before querying again.');
       }
       throw new Error(`crt.sh responded with HTTP ${res.status}`);
     }
@@ -1073,50 +1235,151 @@ async function fetchCrt() {
     try {
       data = JSON.parse(text);
     } catch (_) {
-      throw new Error('crt.sh returned a non-JSON response (likely an upstream rate limit or HTML gateway page).');
+      if (text.includes('502 Bad Gateway') || text.includes('504 Gateway Time-out') || text.includes('Database Error')) {
+        throw new Error('crt.sh upstream gateway timed out while compiling certificate tables.');
+      }
+      throw new Error('crt.sh returned a non-JSON response (likely an upstream rate limit or HTML gateway error page).');
     }
-    
+
+    if (!Array.isArray(data)) {
+      throw new Error('Unexpected response format from crt.sh.');
+    }
+
     const subs = new Set();
     data.forEach(cert => {
+      if (cert.common_name) {
+        cert.common_name.split('\n').forEach(sub => {
+          const cleaned = sub.toLowerCase().trim().replace(/^\*\./, '');
+          if (cleaned === domain || cleaned.endsWith('.' + domain)) {
+            subs.add(cleaned);
+          }
+        });
+      }
       if (cert.name_value) {
         cert.name_value.split('\n').forEach(sub => {
           const cleaned = sub.toLowerCase().trim().replace(/^\*\./, '');
-          if (cleaned.includes(domain)) subs.add(cleaned);
+          if (cleaned === domain || cleaned.endsWith('.' + domain)) {
+            subs.add(cleaned);
+          }
         });
       }
     });
 
     currentCrtHosts = Array.from(subs).sort();
+    const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
+
     if (!currentCrtHosts.length) {
-      status.innerText = 'No matching certificate records found.';
+      if (status) {
+        status.className = 'crt-status-text';
+        status.innerText = `No certificate records found for ${domain} (${elapsedSec}s).`;
+      }
+      if (results) {
+        results.innerHTML = `
+          <div class="crt-empty-state">
+            <span class="crt-empty-icon">ℹ️</span>
+            <p>No matching certificate records found on crt.sh for <code>${escapeHtml(domain)}</code>.</p>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+              The domain may not have public CT logs recorded under this exact apex, or uses a private CA.
+            </span>
+          </div>
+        `;
+      }
       return;
     }
 
-    status.innerText = `Discovered ${currentCrtHosts.length} unique subdomains.`;
-    actionsBar.style.display = 'flex';
-    document.getElementById('crt-filter').value = '';
+    if (status) {
+      status.className = 'crt-status-text success';
+      status.innerText = `Discovered ${currentCrtHosts.length} unique subdomains (${elapsedSec}s)${isWildcard ? '' : ' via fast SAN scan'}.`;
+    }
+    if (actionsBar) actionsBar.style.display = 'flex';
+    const filterInput = document.getElementById('crt-filter');
+    if (filterInput) filterInput.value = '';
     renderCrtList(currentCrtHosts);
     updateChecklist();
+    showToast(`Discovered ${currentCrtHosts.length} subdomains via crt.sh!`);
 
   } catch (err) {
     clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      status.innerText = 'crt.sh request timed out (15s limit). The public server is experiencing high traffic; please retry in a moment.';
-    } else {
-      status.innerText = `Lookup failed: ${err.message}`;
+    const elapsedSec = Math.round((Date.now() - startTime) / 1000);
+    const isTimeout = err.name === 'AbortError';
+
+    let errorDetail = err.message;
+    if (isTimeout) {
+      errorDetail = `crt.sh request timed out after ${elapsedSec}s. The public server is experiencing high traffic.`;
     }
+
+    if (status) {
+      status.className = 'crt-status-text error';
+      status.innerText = isTimeout ? `Timed out after ${elapsedSec}s.` : `Lookup failed: ${err.message}`;
+    }
+
+    // Render interactive recovery card
+    if (results) {
+      results.innerHTML = `
+        <div class="crt-error-card">
+          <div class="crt-error-header">
+            <span class="crt-error-icon">⚠️</span>
+            <div style="flex: 1;">
+              <div class="crt-error-title">${isTimeout ? 'Query Timed Out' : 'crt.sh Service Error'}</div>
+              <div class="crt-error-msg">${escapeHtml(errorDetail)}</div>
+            </div>
+          </div>
+          <div class="crt-error-body">
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 0.75rem 0;">
+              Public CT servers (<code>crt.sh</code>) periodically experience high PostgreSQL query latency when handling full wildcard queries (<code>%.${escapeHtml(domain)}</code>).
+            </p>
+            <div class="crt-error-actions">
+              <button type="button" id="btn-crt-retry-wildcard" class="primary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                🔄 Retry Wildcard (%.${escapeHtml(domain)})
+              </button>
+              ${isWildcard ? `
+              <button type="button" id="btn-crt-try-fast" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; background: #3b82f6; color: white;">
+                ⚡ Try Fast Query (Apex & SANs)
+              </button>
+              ` : ''}
+              <a href="https://crt.sh/?q=%25.${encodeURIComponent(domain)}" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
+                <span>↗️ Open crt.sh in Browser Tab</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Bind recovery action buttons
+      const retryWildcardBtn = document.getElementById('btn-crt-retry-wildcard');
+      if (retryWildcardBtn) {
+        retryWildcardBtn.addEventListener('click', () => fetchCrt('wildcard'));
+      }
+      const tryFastBtn = document.getElementById('btn-crt-try-fast');
+      if (tryFastBtn) {
+        tryFastBtn.addEventListener('click', () => fetchCrt('fast'));
+      }
+    }
+
+  } finally {
+    if (crtTimerInterval) {
+      clearInterval(crtTimerInterval);
+      crtTimerInterval = null;
+    }
+    crtAbortController = null;
+    if (fetchBtn) {
+      fetchBtn.disabled = false;
+      fetchBtn.innerHTML = 'Fetch Subdomains';
+    }
+    if (cancelBtn) cancelBtn.style.display = 'none';
   }
 }
 
 function renderCrtList(hosts) {
   const results = document.getElementById('crt-results');
-  if (!hosts.length) {
-    results.innerHTML = `<p style="color: var(--text-muted); padding: 0.5rem;">No matching subdomains.</p>`;
+  if (!results) return;
+  if (!hosts || !hosts.length) {
+    results.innerHTML = `<p style="color: var(--text-muted); padding: 0.5rem; grid-column: 1 / -1;">No matching subdomains.</p>`;
     return;
   }
   results.innerHTML = hosts.map(s => `
     <label class="crt-item">
-      <input type="checkbox" value="${s}"> ${s}
+      <input type="checkbox" value="${escapeHtml(s)}"> ${escapeHtml(s)}
     </label>
   `).join('');
 }
@@ -1487,6 +1750,506 @@ async function fetchArinJson(url) {
   }
 }
 
+// ==========================================
+// DNS Zone Intelligence (NS, MX, TXT, DMARC, A, SOA)
+// ==========================================
+
+const SAAS_VENDOR_PATTERNS = [
+  { name: 'Google Workspace', match: /google-site-verification|_spf\.google\.com|_netblocks.*\.google\.com/i },
+  { name: 'Microsoft 365 / Outlook', match: /protection\.outlook\.com|\bMS=ms|\bMS=[0-9A-F]{30,}|microsoft-domain-verification/i },
+  { name: 'Atlassian (Jira/Confluence)', match: /atlassian-domain-verification|atlassian/i },
+  { name: 'Salesforce', match: /_spf\.salesforce\.com|salesforce/i },
+  { name: 'Zendesk', match: /zendesk\.com|zendesk/i },
+  { name: 'SendGrid / Twilio', match: /sendgrid\.net|sendgrid/i },
+  { name: 'Mailchimp / Mandrill', match: /servers\.mcsv\.net|mandrillapp\.com/i },
+  { name: 'Marketo', match: /mktomail\.com/i },
+  { name: 'HubSpot', match: /hubspot\.com|hubspot/i },
+  { name: 'Mailgun', match: /mailgun\.org/i },
+  { name: 'Postmark', match: /postmarkapp\.com/i },
+  { name: 'Stripe', match: /stripe-verification/i },
+  { name: 'Shopify', match: /shopify-verification/i },
+  { name: 'DocuSign', match: /docusign=/i },
+  { name: 'Apple Services', match: /apple-domain-verification/i },
+  { name: 'Adobe Cloud', match: /adobe-idp-site-verification|adobe-sign-verification/i },
+  { name: 'Jamf MDM', match: /jamf-site-verification/i },
+  { name: 'Tailscale VPN', match: /TAILSCALE-/i },
+  { name: 'Calendly', match: /calendly-site-verification/i },
+  { name: 'Slack', match: /slack-domain-verification/i },
+  { name: 'GitHub Enterprise', match: /github-domain-verification/i },
+  { name: 'OpenAI', match: /openai-domain-verification/i },
+  { name: 'Anthropic', match: /anthropic-domain-verification/i },
+  { name: 'Miro', match: /miro-verification/i },
+  { name: 'Cisco Webex', match: /cisco-ci-domain-verification/i },
+  { name: 'Zoom', match: /zoom-domain-verification/i },
+  { name: 'Amazon SES / AWS', match: /amazonses\.com|amazon-domain-verification/i },
+  { name: 'Proofpoint', match: /pphosted\.com|proofpoint/i },
+  { name: 'Mimecast', match: /mimecast\.com/i }
+];
+
+function detectMailProvider(host, targetDomain) {
+  const cleanHost = (host || '').toLowerCase().replace(/\.$/, '');
+  if (cleanHost.includes('google.com') || cleanHost.includes('googlemail.com') || cleanHost.includes('aspmx')) {
+    return { name: 'Google Workspace', class: 'dns-tag-cloud' };
+  }
+  if (cleanHost.includes('outlook.com') || cleanHost.includes('office365.com')) {
+    return { name: 'Microsoft 365', class: 'dns-tag-cloud' };
+  }
+  if (cleanHost.includes('pphosted.com') || cleanHost.includes('proofpoint')) {
+    return { name: 'Proofpoint Enterprise', class: 'dns-tag-gateway' };
+  }
+  if (cleanHost.includes('mimecast.com')) {
+    return { name: 'Mimecast Secure Gateway', class: 'dns-tag-gateway' };
+  }
+  if (cleanHost.includes('barracudanetworks.com')) {
+    return { name: 'Barracuda Networks', class: 'dns-tag-gateway' };
+  }
+  if (cleanHost.includes('iphmx.com')) {
+    return { name: 'Cisco IronPort (CES)', class: 'dns-tag-gateway' };
+  }
+  if (cleanHost.includes('zoho.com')) {
+    return { name: 'Zoho Mail', class: 'dns-tag-cloud' };
+  }
+  if (cleanHost.includes('protonmail.ch') || cleanHost.includes('proton.me')) {
+    return { name: 'ProtonMail', class: 'dns-tag-cloud' };
+  }
+  if (targetDomain && (cleanHost === targetDomain || cleanHost.endsWith('.' + targetDomain))) {
+    return { name: '⚠️ Self-Hosted / Direct Gateway', class: 'dns-tag-selfhost' };
+  }
+  return { name: 'Direct Gateway', class: 'dns-tag-provider' };
+}
+
+function detectNsProvider(host) {
+  const cleanHost = (host || '').toLowerCase().replace(/\.$/, '');
+  if (cleanHost.includes('cloudflare.com')) return 'Cloudflare DNS';
+  if (cleanHost.includes('awsdns')) return 'AWS Route 53';
+  if (cleanHost.includes('azure-dns')) return 'Azure DNS';
+  if (cleanHost.includes('googledomains.com') || cleanHost.includes('googlecloud.com')) return 'Google Cloud DNS';
+  if (cleanHost.includes('akam')) return 'Akamai Edge DNS';
+  if (cleanHost.includes('dynect.net')) return 'Dyn / Oracle';
+  if (cleanHost.includes('nsone.net')) return 'NS1 (IBM)';
+  if (cleanHost.includes('ultradns')) return 'Vercara UltraDNS';
+  if (cleanHost.includes('domaincontrol.com')) return 'GoDaddy DNS';
+  if (cleanHost.includes('registrar-servers.com')) return 'Namecheap DNS';
+  return '';
+}
+
+function parseDmarcRecord(dmarcStr) {
+  if (!dmarcStr) return null;
+  const clean = dmarcStr.replace(/^["']+|["']+$/g, '').trim();
+  const match = clean.match(/p\s*=\s*([a-zA-Z]+)/i);
+  const policy = match ? match[1].toLowerCase() : 'none';
+  const ruaMatch = clean.match(/rua\s*=\s*([^;]+)/i);
+  const rua = ruaMatch ? ruaMatch[1].trim() : '';
+  return {
+    raw: clean,
+    policy,
+    rua,
+    statusClass: policy === 'reject' ? 'dmarc-pass' : (policy === 'quarantine' ? 'dmarc-warn' : 'dmarc-fail'),
+    statusLabel: policy === 'reject' ? 'Protected (p=reject)' : (policy === 'quarantine' ? 'Monitoring (p=quarantine)' : '⚠️ Inactive / Spoofable (p=none)')
+  };
+}
+
+function parseSoaRecord(soaStr) {
+  if (!soaStr) return null;
+  const clean = soaStr.replace(/^["']+|["']+$/g, '').trim();
+  const tokens = clean.split(/\s+/);
+  if (tokens.length < 2) return null;
+  const mname = tokens[0].replace(/\.$/, '');
+  let rname = tokens[1].replace(/\.$/, '');
+  if (rname.includes('.')) {
+    const firstDot = rname.indexOf('.');
+    rname = rname.substring(0, firstDot) + '@' + rname.substring(firstDot + 1);
+  }
+  const serial = tokens[2] || '';
+  return { mname, rname, serial, raw: clean };
+}
+
+function parseDnsZoneData(targetDomain, rawAnswers) {
+  const cleanStr = (s) => (s || '').replace(/^["']+|["']+$/g, '').trim();
+
+  const aList = (rawAnswers.a || []).map(r => cleanStr(r.data)).filter(Boolean);
+  const aaaaList = (rawAnswers.aaaa || []).map(r => cleanStr(r.data)).filter(Boolean);
+
+  const nsList = (rawAnswers.ns || []).map(r => {
+    const host = cleanStr(r.data).replace(/\.$/, '');
+    return {
+      host,
+      provider: detectNsProvider(host)
+    };
+  }).filter(n => n.host);
+
+  const mxList = (rawAnswers.mx || []).map(r => {
+    const raw = cleanStr(r.data);
+    const tokens = raw.split(/\s+/);
+    const priority = tokens.length > 1 ? parseInt(tokens[0], 10) : 0;
+    const host = (tokens.length > 1 ? tokens[1] : tokens[0]).replace(/\.$/, '');
+    const provider = detectMailProvider(host, targetDomain);
+    return {
+      priority: isNaN(priority) ? 0 : priority,
+      host,
+      providerName: provider.name,
+      providerClass: provider.class
+    };
+  }).sort((a, b) => a.priority - b.priority).filter(m => m.host && m.host !== '.');
+
+  const rawTxtList = (rawAnswers.txt || []).map(r => cleanStr(r.data)).filter(Boolean);
+  let spfRecord = '';
+  const txtRecords = [];
+  const saasFound = new Set();
+
+  rawTxtList.forEach(txt => {
+    if (txt.toLowerCase().startsWith('v=spf1')) {
+      spfRecord = txt;
+    } else {
+      txtRecords.push(txt);
+    }
+    SAAS_VENDOR_PATTERNS.forEach(vendor => {
+      if (vendor.match.test(txt)) {
+        saasFound.add(vendor.name);
+      }
+    });
+  });
+
+  let dmarc = null;
+  const dmarcAnswers = rawAnswers.dmarc || [];
+  if (dmarcAnswers.length > 0 && dmarcAnswers[0].data) {
+    dmarc = parseDmarcRecord(dmarcAnswers[0].data);
+    if (dmarc) {
+      SAAS_VENDOR_PATTERNS.forEach(vendor => {
+        if (vendor.match.test(dmarc.raw)) {
+          saasFound.add(vendor.name);
+        }
+      });
+    }
+  }
+
+  let soa = null;
+  const soaAnswers = rawAnswers.soa || [];
+  if (soaAnswers.length > 0 && soaAnswers[0].data) {
+    soa = parseSoaRecord(soaAnswers[0].data);
+  }
+
+  const totalRecords = aList.length + aaaaList.length + nsList.length + mxList.length + rawTxtList.length + (dmarc ? 1 : 0) + (soa ? 1 : 0);
+
+  return {
+    domain: targetDomain,
+    a: aList,
+    aaaa: aaaaList,
+    ns: nsList,
+    mx: mxList,
+    spf: spfRecord,
+    txt: txtRecords,
+    dmarc,
+    soa,
+    saasVendors: Array.from(saasFound).sort(),
+    totalRecords
+  };
+}
+
+async function fetchAndRenderDnsZone(targetDomain) {
+  if (!targetDomain) {
+    renderDnsZone(null);
+    return null;
+  }
+
+  try {
+    const [aRes, aaaaRes, nsRes, mxRes, txtRes, dmarcRes, soaRes] = await Promise.all([
+      queryDns(targetDomain, 'A'),
+      queryDns(targetDomain, 'AAAA'),
+      queryDns(targetDomain, 'NS'),
+      queryDns(targetDomain, 'MX'),
+      queryDns(targetDomain, 'TXT'),
+      queryDns(`_dmarc.${targetDomain}`, 'TXT'),
+      queryDns(targetDomain, 'SOA')
+    ]);
+
+    const zone = parseDnsZoneData(targetDomain, {
+      a: aRes,
+      aaaa: aaaaRes,
+      ns: nsRes,
+      mx: mxRes,
+      txt: txtRes,
+      dmarc: dmarcRes,
+      soa: soaRes
+    });
+
+    currentDnsZone = zone;
+    renderDnsZone(zone);
+    return zone;
+  } catch (err) {
+    console.warn('Failed to fetch DNS zone:', err);
+    return null;
+  }
+}
+
+function renderDnsZone(zone) {
+  if (!els.dnsZoneSection) return;
+
+  if (!zone || !zone.totalRecords) {
+    els.dnsZoneSection.style.display = 'none';
+    return;
+  }
+
+  els.dnsZoneSection.style.display = 'block';
+  if (els.dnsRecordsCount) els.dnsRecordsCount.innerText = zone.totalRecords;
+
+  // SaaS banner
+  if (els.dnsSaasBanner && els.dnsSaasTags) {
+    if (zone.saasVendors.length > 0) {
+      els.dnsSaasBanner.style.display = 'flex';
+      els.dnsSaasTags.innerHTML = zone.saasVendors.map(v => `<span class="dns-saas-chip">✓ ${escapeHtml(v)}</span>`).join('');
+    } else {
+      els.dnsSaasBanner.style.display = 'none';
+    }
+  }
+
+  // Card 1: Nameservers (NS)
+  if (els.dnsNsCount) els.dnsNsCount.innerText = zone.ns.length;
+  if (els.dnsNsList) {
+    if (!zone.ns.length) {
+      els.dnsNsList.innerHTML = `<span class="dns-card-empty">No NS records returned.</span>`;
+    } else {
+      els.dnsNsList.innerHTML = zone.ns.map(n => `
+        <div class="dns-record-row">
+          <span class="dns-record-val">${escapeHtml(n.host)}</span>
+          ${n.provider ? `<span class="dns-tag-provider dns-tag-cloud">${escapeHtml(n.provider)}</span>` : ''}
+        </div>
+      `).join('');
+    }
+  }
+
+  // Card 2: Mail Exchange Gateways (MX)
+  if (els.dnsMxCount) els.dnsMxCount.innerText = zone.mx.length;
+  if (els.dnsMxList) {
+    if (!zone.mx.length) {
+      els.dnsMxList.innerHTML = `<span class="dns-card-empty">No MX records returned (null MX or direct apex routing).</span>`;
+    } else {
+      els.dnsMxList.innerHTML = zone.mx.map(m => `
+        <div class="dns-record-row">
+          <span class="dns-badge mx-badge">${m.priority}</span>
+          <span class="dns-record-val" style="margin-left: 0.35rem;">${escapeHtml(m.host)}</span>
+          <span class="dns-tag-provider ${m.providerClass || 'dns-tag-cloud'}">${escapeHtml(m.providerName)}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Card 3: Apex & Authority (A / AAAA / SOA)
+  if (els.dnsApexList) {
+    let apexHtml = '';
+    if (zone.a.length) {
+      zone.a.forEach(ip => {
+        apexHtml += `
+          <div class="dns-record-row">
+            <span class="dns-badge a-badge">IPv4</span>
+            <span class="dns-record-val" style="margin-left: 0.35rem;">${escapeHtml(ip)}</span>
+            <button type="button" class="btn-sm dns-tag-provider" data-action="check-apex-shodan" data-ip="${escapeHtml(ip)}" title="Check Shodan InternetDB for open ports">Shodan</button>
+          </div>
+        `;
+      });
+    }
+    if (zone.aaaa.length) {
+      zone.aaaa.forEach(ip => {
+        apexHtml += `
+          <div class="dns-record-row">
+            <span class="dns-badge" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1;">IPv6</span>
+            <span class="dns-record-val" style="margin-left: 0.35rem; font-size: 0.72rem;">${escapeHtml(ip)}</span>
+          </div>
+        `;
+      });
+    }
+    if (zone.soa) {
+      apexHtml += `
+        <div class="dns-record-row" style="margin-top: 0.35rem; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 0.35rem;">
+          <span class="dns-badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8;">SOA</span>
+          <span class="dns-record-val" style="margin-left: 0.35rem; font-size: 0.72rem;">
+            Master: <strong>${escapeHtml(zone.soa.mname)}</strong><br>
+            Admin: <code>${escapeHtml(zone.soa.rname)}</code>
+          </span>
+        </div>
+      `;
+    }
+    if (!apexHtml) {
+      apexHtml = `<span class="dns-card-empty">No apex A/AAAA or SOA records resolved.</span>`;
+    }
+    els.dnsApexList.innerHTML = apexHtml;
+  }
+
+  // Card 4: Text Records & DMARC
+  if (els.dnsTxtCount) els.dnsTxtCount.innerText = (zone.spf ? 1 : 0) + zone.txt.length + (zone.dmarc ? 1 : 0);
+  if (els.dnsTxtList) {
+    let txtHtml = '';
+    if (zone.dmarc) {
+      txtHtml += `
+        <div class="dns-record-row" style="background: rgba(255,255,255,0.04);">
+          <span class="dmarc-status-pill ${zone.dmarc.statusClass}">DMARC: ${escapeHtml(zone.dmarc.statusLabel)}</span>
+          ${zone.dmarc.rua ? `<span style="font-size: 0.68rem; color: var(--text-muted);" title="${escapeHtml(zone.dmarc.rua)}">RUA Configured</span>` : ''}
+        </div>
+      `;
+    } else {
+      txtHtml += `
+        <div class="dns-record-row">
+          <span class="dmarc-status-pill dmarc-fail">⚠️ DMARC: Missing / Not Configured</span>
+        </div>
+      `;
+    }
+
+    if (zone.spf) {
+      txtHtml += `
+        <div class="dns-record-row" title="${escapeHtml(zone.spf)}">
+          <span class="dns-badge txt-badge">SPF</span>
+          <span class="dns-record-val" style="margin-left: 0.35rem; font-size: 0.72rem;">${escapeHtml(zone.spf)}</span>
+        </div>
+      `;
+    }
+
+    if (zone.txt.length) {
+      zone.txt.slice(0, 8).forEach(txt => {
+        txtHtml += `
+          <div class="dns-record-row" title="${escapeHtml(txt)}">
+            <span class="dns-record-val" style="font-size: 0.72rem;">${escapeHtml(txt.length > 55 ? txt.slice(0, 55) + '...' : txt)}</span>
+          </div>
+        `;
+      });
+      if (zone.txt.length > 8) {
+        txtHtml += `<div style="font-size: 0.72rem; color: var(--text-muted); text-align: center; padding: 0.2rem 0;">+ ${zone.txt.length - 8} more TXT records</div>`;
+      }
+    }
+
+    if (!txtHtml) {
+      txtHtml = `<span class="dns-card-empty">No TXT or DMARC records found.</span>`;
+    }
+    els.dnsTxtList.innerHTML = txtHtml;
+  }
+}
+
+function copyDnsSummary() {
+  if (!currentDnsZone || !currentDnsZone.totalRecords) {
+    showToast('No DNS records available to copy.');
+    return;
+  }
+  const z = currentDnsZone;
+  const lines = [`### DNS Zone Intelligence: ${z.domain}`];
+  if (z.a.length) lines.push(`- **Apex IPv4:** ${z.a.join(', ')}`);
+  if (z.aaaa.length) lines.push(`- **Apex IPv6:** ${z.aaaa.join(', ')}`);
+  if (z.ns.length) lines.push(`- **Nameservers:** ${z.ns.map(n => n.host + (n.provider ? ` (${n.provider})` : '')).join(', ')}`);
+  if (z.mx.length) lines.push(`- **Mail Gateways:** ${z.mx.map(m => `[${m.priority}] ${m.host} (${m.providerName})`).join(', ')}`);
+  if (z.dmarc) lines.push(`- **DMARC Policy:** ${z.dmarc.statusLabel} (${z.dmarc.raw})`);
+  if (z.spf) lines.push(`- **SPF:** ${z.spf}`);
+  if (z.saasVendors.length) lines.push(`- **Detected Cloud/SaaS Ecosystem:** ${z.saasVendors.join(', ')}`);
+  if (z.soa) lines.push(`- **SOA Master:** ${z.soa.mname} | Admin: ${z.soa.rname}`);
+
+  navigator.clipboard.writeText(lines.join('\n'));
+  showToast('Copied DNS Zone summary to clipboard!');
+}
+
+async function sendDnsToAuditLog() {
+  if (!currentDnsZone || !currentDnsZone.totalRecords) {
+    showToast('No DNS records to send.');
+    return;
+  }
+  const z = currentDnsZone;
+  const now = new Date().toISOString();
+  let addedCount = 0;
+
+  const addFinding = (url, notes, query) => {
+    if (!state.auditLogs.some(a => a.url === url)) {
+      state.auditLogs.push({
+        id: (Date.now() + addedCount).toString(),
+        url,
+        status: 'investigating',
+        notes,
+        query,
+        engine: 'dns',
+        timestamp: now
+      });
+      addedCount++;
+    }
+  };
+
+  if (z.mx.length) {
+    const mxSummary = z.mx.map(m => `[${m.priority}] ${m.host} (${m.providerName})`).join(', ');
+    addFinding(
+      `dns://mx.${z.domain}`,
+      `Mail Exchange Gateways for ${z.domain}: ${mxSummary}`,
+      `DNS MX: ${z.domain}`
+    );
+  }
+
+  if (z.ns.length) {
+    const nsSummary = z.ns.map(n => `${n.host}${n.provider ? ' (' + n.provider + ')' : ''}`).join(', ');
+    addFinding(
+      `dns://ns.${z.domain}`,
+      `Authoritative Nameservers for ${z.domain}: ${nsSummary}`,
+      `DNS NS: ${z.domain}`
+    );
+  }
+
+  if (z.dmarc || z.spf || z.saasVendors.length) {
+    const dmarcNote = z.dmarc ? `DMARC: ${z.dmarc.statusLabel}. ` : 'DMARC: Missing. ';
+    const saasNote = z.saasVendors.length ? `Detected SaaS Stack: ${z.saasVendors.join(', ')}. ` : '';
+    const spfNote = z.spf ? `SPF: ${z.spf}` : '';
+    addFinding(
+      `dns://email-security.${z.domain}`,
+      `Email Security & Cloud Profile for ${z.domain}: ${dmarcNote}${saasNote}${spfNote}`,
+      `DNS TXT/DMARC: ${z.domain}`
+    );
+  }
+
+  if (z.a.length) {
+    addFinding(
+      `dns://apex.${z.domain}`,
+      `Apex Host IPv4 for ${z.domain}: ${z.a.join(', ')}${z.soa ? ` (Zone Master: ${z.soa.mname})` : ''}`,
+      `DNS A: ${z.domain}`
+    );
+  }
+
+  if (addedCount > 0) {
+    await browser.storage.local.set({ auditLogs: state.auditLogs });
+    renderAuditLogs();
+    updateChecklist();
+    showToast(`Logged ${addedCount} DNS Zone findings to Audit Log!`);
+  } else {
+    showToast('All DNS findings for this domain are already logged.');
+  }
+}
+
+async function checkSingleIpShodan(ip, btn) {
+  if (!ip) return;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  try {
+    let hostData = null;
+    if (state.shodanApiKey && state.shodanApiKey.trim()) {
+      const res = await fetch(`https://api.shodan.io/shodan/host/${encodeURIComponent(ip)}?key=${encodeURIComponent(state.shodanApiKey.trim())}`);
+      if (res.ok) hostData = await res.json().catch(() => null);
+    }
+    if (!hostData) {
+      const res = await fetch(`https://internetdb.shodan.io/${encodeURIComponent(ip)}`);
+      if (res.ok) hostData = await res.json().catch(() => null);
+    }
+
+    if (!hostData || (!hostData.ports || !hostData.ports.length)) {
+      showToast(`Shodan: No open ports indexed for ${ip}`);
+      btn.textContent = 'No Ports';
+      btn.title = 'No open ports indexed by Shodan InternetDB';
+    } else {
+      const ports = hostData.ports.join(', ');
+      const cves = hostData.cves && hostData.cves.length ? ` | CVEs: ${hostData.cves.length}` : '';
+      btn.textContent = `Ports: ${ports}${cves}`;
+      btn.className = 'btn-sm dns-tag-provider dns-tag-selfhost';
+      btn.title = `Open ports on ${ip}: ${ports}${cves}`;
+      showToast(`Shodan (${ip}): Open ports [${ports}]${cves}`);
+    }
+  } catch (_) {
+    btn.textContent = 'Err';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function fetchInfra(isCustomKeywordSearch = false) {
   const infraVal = (els.infraKeyword ? els.infraKeyword.value : '').trim();
   const domainVal = (els.domain ? els.domain.value : '').trim();
@@ -1520,14 +2283,22 @@ async function fetchInfra(isCustomKeywordSearch = false) {
     }
   }
 
-  els.infraStatus.innerText = 'Resolving DNS records and active web host...';
+  els.infraStatus.innerText = 'Resolving authoritative DNS records and zone assets...';
   currentRelatedDomains = [];
   currentNetblocks = [];
+  currentDnsZone = null;
+  renderDnsZone(null);
   renderRelatedDomains([]);
   renderNetblocks([]);
   updateChecklist();
 
   try {
+    // 0. Discover & render DNS Zone Intelligence (NS, MX, TXT/SPF, DMARC, A, SOA)
+    if (targetDomain) {
+      await fetchAndRenderDnsZone(targetDomain);
+      updateChecklist();
+    }
+
     // 1. Discover related domains via DNS DoH (takes ~50ms)
     await discoverRelatedDomains(targetDomain, companyKeyword, baseKeyword, (updatedDomains) => {
       currentRelatedDomains = updatedDomains;
@@ -1826,6 +2597,7 @@ async function hydrateCtBrandDomains(targetDomain, companyKeyword, baseKeyword, 
 
   // 1. CT logs for %.targetDomain
   if (targetDomain) {
+    let data = [];
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
     try {
@@ -1834,20 +2606,28 @@ async function hydrateCtBrandDomains(targetDomain, companyKeyword, baseKeyword, 
       });
       clearTimeout(timeoutId);
       if (res.ok) {
-        const data = await res.json().catch(() => []);
-        if (Array.isArray(data)) {
-          data.forEach(cert => {
-            if (cert.common_name) addCandidate(cert.common_name, 'TLS Multi-SAN Cert', `Common Name on cert #${cert.id || ''}`);
-            if (cert.name_value) {
-              cert.name_value.split('\n').forEach(name => {
-                addCandidate(name, 'TLS Multi-SAN Cert', `Multi-SAN cross-link`);
-              });
-            }
-          });
-        }
+        data = await res.json().catch(() => []);
       }
     } catch (_) {
       clearTimeout(timeoutId);
+      // Fast fallback to apex exact query if wildcard fails or times out
+      try {
+        const fallbackRes = await fetch(`https://crt.sh/?q=${encodeURIComponent(targetDomain)}&output=json`);
+        if (fallbackRes.ok) {
+          data = await fallbackRes.json().catch(() => []);
+        }
+      } catch (_) {}
+    }
+
+    if (Array.isArray(data)) {
+      data.forEach(cert => {
+        if (cert.common_name) addCandidate(cert.common_name, 'TLS Multi-SAN Cert', `Common Name on cert #${cert.id || ''}`);
+        if (cert.name_value) {
+          cert.name_value.split('\n').forEach(name => {
+            addCandidate(name, 'TLS Multi-SAN Cert', `Multi-SAN cross-link`);
+          });
+        }
+      });
     }
   }
 
@@ -2525,13 +3305,16 @@ function renderAuditLogs() {
           <span class="audit-meta">${new Date(a.timestamp).toLocaleString()} &bull; Engine: ${a.engine.toUpperCase()}</span>
         </div>
         <div class="audit-url">
-          <a href="${a.url}" target="_blank" rel="noopener noreferrer">${a.url}</a>
+          <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener noreferrer" title="Live visit (warning: sends requests from your browser to target)">${escapeHtml(a.url)}</a>
         </div>
-        <div class="audit-query"><code>${a.query || 'N/A'}</code></div>
-        ${a.notes ? `<div class="audit-notes">${a.notes.replace(/\n/g, '<br>')}</div>` : ''}
+        <div class="audit-query"><code>${escapeHtml(a.query || 'N/A')}</code></div>
+        ${a.notes ? `<div class="audit-notes">${escapeHtml(a.notes).replace(/\n/g, '<br>')}</div>` : ''}
         <div class="audit-entry-bottom">
           <span class="audit-id-label">ID: ${a.id.slice(-6)}</span>
-          <button style="font-size: 0.75rem; padding: 0.25rem 0.6rem;" data-action="delete" data-id="${a.id}">Delete Entry</button>
+          <div class="audit-entry-actions">
+            <button type="button" class="btn-sm btn-ghost btn-urlscan-action" data-action="urlscan" data-id="${a.id}" title="Passively search historical scans on urlscan.io without sending packets to target">🔍 urlscan</button>
+            <button type="button" class="btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;" data-action="delete" data-id="${a.id}">Delete Entry</button>
+          </div>
         </div>
       </div>
     `;
@@ -2562,6 +3345,63 @@ window.deleteAuditFinding = async (id) => {
   updateChecklist();
   showToast('Finding deleted.');
 };
+
+function buildUrlscanSearchUrl(target) {
+  if (!target) return null;
+  target = target.trim();
+  let query = '';
+
+  if (/^mailto:/i.test(target) || (target.includes('@') && !target.includes('/'))) {
+    const email = target.replace(/^mailto:/i, '').trim();
+    const domainPart = email.split('@')[1];
+    query = domainPart ? `domain:${domainPart.toLowerCase()}` : `"${target}"`;
+  } else if (/^https?:\/\//i.test(target)) {
+    try {
+      const u = new URL(target);
+      if ((u.pathname && u.pathname !== '/') || u.search) {
+        query = `page.url:"${target.replace(/"/g, '\\"')}"`;
+      } else {
+        query = `domain:${u.hostname.toLowerCase()}`;
+      }
+    } catch (e) {
+      const host = target.replace(/^https?:\/\//i, '').split('/')[0];
+      query = `domain:${host.toLowerCase()}`;
+    }
+  } else if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?$/.test(target)) {
+    const ipOnly = target.split('/')[0];
+    query = `ip:${ipOnly}`;
+  } else {
+    const cleanHost = target.replace(/^https?:\/\//i, '').replace(/[\/:]+.*$/, '').trim().toLowerCase();
+    query = `domain:${cleanHost}`;
+  }
+
+  return `https://urlscan.io/search/#${encodeURI(query)}`;
+}
+
+function openAuditUrlscan(id) {
+  const entry = state.auditLogs.find(a => a.id === id);
+  if (!entry || !entry.url) return;
+  const searchUrl = buildUrlscanSearchUrl(entry.url);
+  if (searchUrl) {
+    window.open(searchUrl, '_blank');
+    showToast('Opening passive urlscan search in new tab');
+  }
+}
+
+function openFormUrlscan() {
+  const urlInput = document.getElementById('a-url');
+  const val = urlInput ? urlInput.value.trim() : '';
+  if (!val) {
+    alert('Please enter a finding URL or domain in the form first.');
+    return;
+  }
+  const searchUrl = buildUrlscanSearchUrl(val);
+  if (searchUrl) {
+    window.open(searchUrl, '_blank');
+    showToast('Opening passive urlscan search in new tab');
+  }
+}
+
 
 async function clearFalsePositives() {
   const fpList = state.auditLogs.filter(a => a.status === 'false_positive');
@@ -2771,7 +3611,7 @@ function updateExposureCard(templateId) {
 function updateChecklist() {
   const domainSet = !!(els.domain && els.domain.value.trim());
   const crtDone = currentCrtHosts.length > 0;
-  const infraDone = currentRelatedDomains.length > 0 || currentNetblocks.length > 0;
+  const infraDone = (currentDnsZone && currentDnsZone.totalRecords > 0) || currentRelatedDomains.length > 0 || currentNetblocks.length > 0;
   const emailsDone = currentDiscoveredEmails.length > 0;
   const dorksDone = (state.dorksRun > 0) || state.auditLogs.some(a => a.engine !== 'crt.sh' && a.engine !== 'keyserver' && a.engine !== 'arin' && a.engine !== 'network');
   const exportDone = state.auditLogs.length > 0;
@@ -2846,14 +3686,14 @@ const METHODOLOGY_STEPS = {
   },
   3: {
     num: 3,
-    title: 'Global Infrastructure, Netblocks & Shodan',
-    what: 'Cross-references DNS infrastructure (NS, SOA, MX), multi-SAN certificates, and Regional Internet Registries (ARIN, RIPE, RDAP) to discover corporate IP netblocks, probe reverse PTR records, and query Shodan for open ports and CVEs.',
-    why: '<strong>Apex Domain Myopia</strong> is a major blind spot: companies often run public marketing on one domain (e.g. <code>brandapp.com</code>), while corporate email, internal SSO, and sensitive datacenter systems run on sibling apex domains (e.g. <code>brand.com</code>) or dedicated corporate CIDR space. Discovering netblocks and checking Shodan identifies exposed management ports (SSH, RDP, SNMP) without scanning the target directly.',
-    tip: 'Click "Probe PTRs" on discovered CIDRs to reveal internal server names, and "Check Ports" to check Shodan InternetDB for unauthenticated exposure.',
-    actionLabel: 'Open Infrastructure Tab',
+    title: 'DNS Zone, Corporate Infrastructure & Shodan',
+    what: 'Queries authoritative DNS records (NS, MX, TXT/SPF, DMARC) via Google/Cloudflare DoH, cross-references multi-SAN certificates and Regional Internet Registries (ARIN, RIPE, RDAP) for corporate netblocks, and checks Shodan for open ports and CVEs.',
+    why: '<strong>Apex Domain Myopia</strong> and uninspected DNS records are major blind spots: DNS records reveal mail security gateways (OWA/Exchange), cloud providers, and SaaS tokens, while netblock discovery uncovers dedicated corporate datacenters and exposed management ports without active scanning.',
+    tip: 'Review detected Cloud & SaaS vendors from TXT records to guide your dork templates in Step 5, and click "Check Ports" to inspect Shodan InternetDB.',
+    actionLabel: 'Open DNS & Infrastructure',
     actionFn: () => {
       switchTab('tab-infra');
-      if (els.domain.value.trim() && !currentRelatedDomains.length && !currentNetblocks.length) fetchInfra();
+      if (els.domain.value.trim() && !currentRelatedDomains.length && !currentNetblocks.length && !currentDnsZone) fetchInfra();
     }
   },
   4: {
