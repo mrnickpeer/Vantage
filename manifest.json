@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vantage",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
   "permissions": [
     "storage",
@@ -12,6 +12,7 @@
   "host_permissions": [
     "https://crt.sh/*",
     "https://keyserver.ubuntu.com/*",
+    "https://pgp.surf.nl/*",
     "https://whois.arin.net/*",
     "https://rdap.arin.net/*",
     "https://rest.db.ripe.net/*",

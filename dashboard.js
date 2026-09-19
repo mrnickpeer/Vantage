@@ -1465,15 +1465,73 @@ async function fetchEmails() {
   els.emailActionsBar.style.display = 'none';
   if (els.emailPatternBanner) els.emailPatternBanner.style.display = 'none';
 
-  try {
-    const res = await fetch(`https://keyserver.ubuntu.com/pks/lookup?search=${encodeURIComponent(domain)}&op=index&options=mr`);
-    if (res.status === 404) {
-      els.emailStatus.innerText = 'No public PGP key records found for this domain.';
-      return;
-    }
-    if (!res.ok) throw new Error(`Server responded with HTTP ${res.status}`);
-    const text = await res.text();
+  const keyservers = [
+    { name: 'Ubuntu PGP Keyserver', host: 'keyserver.ubuntu.com', url: `https://keyserver.ubuntu.com/pks/lookup?search=${encodeURIComponent(domain)}&op=index&options=mr` },
+    { name: 'SURFnet PGP Keyserver', host: 'pgp.surf.nl', url: `https://pgp.surf.nl/pks/lookup?search=${encodeURIComponent(domain)}&op=index&options=mr` }
+  ];
 
+  let text = null;
+  let usedServer = null;
+  let lastError = null;
+  let hadTimeoutOr500 = false;
+
+  for (let i = 0; i < keyservers.length; i++) {
+    const server = keyservers[i];
+    if (i > 0) {
+      els.emailStatus.innerText = `Primary keyserver timed out or returned an error; querying fallback (${server.host})...`;
+    } else {
+      els.emailStatus.innerText = `Querying public PGP keyserver (${server.host})...`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    try {
+      const res = await fetch(server.url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.status === 404) {
+        lastError = new Error('No public PGP key records found for this domain.');
+        continue;
+      }
+
+      if (res.status >= 500) {
+        hadTimeoutOr500 = true;
+        lastError = new Error(`Server ${server.host} responded with HTTP ${res.status}`);
+        continue;
+      }
+
+      if (!res.ok) {
+        lastError = new Error(`Server ${server.host} responded with HTTP ${res.status}`);
+        continue;
+      }
+
+      text = await res.text();
+      usedServer = server;
+      break;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        hadTimeoutOr500 = true;
+        lastError = new Error(`Connection to ${server.host} timed out`);
+      } else {
+        lastError = err;
+      }
+    }
+  }
+
+  if (!text) {
+    if (hadTimeoutOr500) {
+      els.emailStatus.innerText = 'Lookup failed: Keyserver query timed out or failed. Large enterprise domains (e.g. google.com, microsoft.com) often exceed public keyserver database query limits.';
+    } else if (lastError && lastError.message.includes('No public PGP key records')) {
+      els.emailStatus.innerText = 'No public PGP key records found for this domain.';
+    } else {
+      els.emailStatus.innerText = `Lookup failed: ${lastError ? lastError.message : 'Unknown keyserver error'}`;
+    }
+    return;
+  }
+
+  try {
     const emailsMap = new Map();
     const lines = text.split('\n');
     let currentKeyYear = null;
@@ -1524,7 +1582,8 @@ async function fetchEmails() {
       return;
     }
 
-    els.emailStatus.innerText = `Discovered ${currentDiscoveredEmails.length} unique email identities.`;
+    const fallbackNotice = usedServer && usedServer.host !== 'keyserver.ubuntu.com' ? ` (via ${usedServer.host} fallback)` : '';
+    els.emailStatus.innerText = `Discovered ${currentDiscoveredEmails.length} unique email identities${fallbackNotice}.`;
     els.emailActionsBar.style.display = 'flex';
     els.emailFilter.value = '';
     renderEmailList(currentDiscoveredEmails);
@@ -3699,9 +3758,9 @@ const METHODOLOGY_STEPS = {
   4: {
     num: 4,
     title: 'Email Discovery & Public Identity Profiling',
-    what: 'Passively queries open PGP keyservers (<code>keyserver.ubuntu.com</code>) for cryptographic signatures associated with the target domain, and uses local-part pattern recognition to deduce the corporate email naming convention.',
+    what: 'Passively queries open PGP keyservers (<code>keyserver.ubuntu.com</code> / <code>pgp.surf.nl</code>) for cryptographic signatures associated with the target domain, and uses local-part pattern recognition to deduce the corporate email naming convention.',
     why: 'Real technical employees, sysadmins, and DevOps engineers register public PGP keys for Git commit signing and software distribution. Deducing the corporate email convention enables precision dorking for employee resumes, leaked spreadsheets, and configuration dumps containing staff addresses.',
-    tip: 'After detecting the pattern (e.g. <code>{first}.{last}@target.com</code>), click "Dork for this naming format" to discover sensitive documents mentioning internal personnel.',
+    tip: 'For high-volume enterprise targets, public keyservers may experience database query limits or timeouts. Vantage automatically fails over to secondary keyservers to complete discovery.',
     actionLabel: 'Open Emails Tab',
     actionFn: () => {
       switchTab('tab-emails');

@@ -481,7 +481,7 @@
         <div class="toolbar">
           <div>
             <h2>Email Discovery & Public Identity</h2>
-            <p class="section-desc">Passively query public PGP and open directory registries (<code>keyserver.ubuntu.com</code>) for verified domain emails.</p>
+            <p class="section-desc">Passively query public PGP and open directory registries (<code>keyserver.ubuntu.com</code> / <code>pgp.surf.nl</code>) for verified domain emails.</p>
           </div>
         </div>
 
@@ -497,6 +497,11 @@
         <div class="guidance-callout guidance-item">
           <strong>💡 OpenPGP Identity Intelligence:</strong>
           <p>Public keyservers index real technical personnel who configured Git signing or package management. Vantage extracts the creation year to distinguish active employees from legacy keys and analyzes local parts to deduce the corporate email convention.</p>
+        </div>
+
+        <div class="guidance-callout guidance-item callout-warning">
+          <strong>⚠️ Enterprise Query & Timeout Advisory:</strong>
+          <p>Large enterprise domains (e.g. <code>google.com</code>, <code>microsoft.com</code>, <code>apple.com</code>) possess tens of thousands of indexed public keys. These queries can trigger keyserver timeouts or HTTP 500 errors on primary servers due to database statement limits. Vantage automatically attempts failover to secondary keyservers, but some queries may still experience latency or record limits.</p>
         </div>
 
         <div class="crt-controls">

@@ -40,7 +40,7 @@ To perform passive attack surface discovery and reconnaissance, Vantage initiate
 - **Certificate Transparency Logs** (`crt.sh`) — For discovering public SSL/TLS certificate domain records.
 - **Public DNS over HTTPS (DoH)** (`dns.google`, `cloudflare-dns.com`) — For resolving standard DNS resource records (A, NS, MX, SOA, PTR).
 - **Regional Internet Registries (RIRs)** (`whois.arin.net`, `rdap.arin.net`, `rdap.db.ripe.net`, `rdap.apnic.net`) — For retrieving public organization registration and IP CIDR netblocks.
-- **OpenPGP Keyservers** (`keyserver.ubuntu.com`) — For querying public cryptographic key signatures associated with domain names.
+- **OpenPGP Keyservers** (`keyserver.ubuntu.com`, `pgp.surf.nl`) — For querying public cryptographic key signatures associated with domain names (with secondary failover for large enterprises or keyserver downtime).
 - **Host Intelligence** (`internetdb.shodan.io`, `api.shodan.io`) — For checking publicly indexed open ports and known CVE vulnerabilities.
 
 These requests are standard, client-initiated HTTPS connections. They are governed by the respective privacy policies of those third-party providers. Vantage does not route these requests through any intermediary proxy or developer-controlled proxy server.

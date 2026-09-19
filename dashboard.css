@@ -899,6 +899,15 @@ button.primary:hover { background: var(--primary-hover); }
   color: #93c5fd;
 }
 
+.guidance-callout.callout-warning {
+  border-left-color: var(--warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.guidance-callout.callout-warning strong {
+  color: var(--warning);
+}
+
 /* Infrastructure & ARIN Tab */
 .infra-search-bar {
   display: flex;
