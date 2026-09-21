@@ -642,7 +642,7 @@ function bindEvents() {
           if (els.shodanKeyStatus) {
             els.shodanKeyStatus.style.display = 'block';
             els.shodanKeyStatus.className = 'shodan-key-status error';
-            els.shodanKeyStatus.innerHTML = `❌ <strong>Invalid Key (401 Unauthorized):</strong> Shodan rejected this key. Please check your key at <a href="https://account.shodan.io" target="_blank" rel="noopener" style="color: #fca5a5; text-decoration: underline;">account.shodan.io</a>.`;
+            els.shodanKeyStatus.innerHTML = `❌ <strong>Invalid Key (401 Unauthorized):</strong> Shodan rejected this key. Please check your key at <a href="https://account.shodan.io" target="_blank" rel="noopener noreferrer" style="color: #fca5a5; text-decoration: underline;">account.shodan.io</a>.`;
           }
           showToast('Shodan returned 401 Unauthorized for this key.');
         } else {
@@ -891,9 +891,9 @@ function updatePresetDropdown() {
   
   let html = '<option value="">-- Choose an Intent Template --</option>';
   Object.keys(cats).sort().forEach(cat => {
-    html += `<optgroup label="${cat}">`;
+    html += `<optgroup label="${escapeHtml(cat)}">`;
     cats[cat].forEach(t => {
-      html += `<option value="${t.id}">${t.name}</option>`;
+      html += `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`;
     });
     html += `</optgroup>`;
   });
@@ -904,7 +904,7 @@ function updateCategoryFilterDropdown() {
   const categories = Array.from(new Set(state.templates.map(t => t.category || 'General'))).sort();
   const currentVal = els.templateCatFilter.value;
   els.templateCatFilter.innerHTML = '<option value="all">All Categories</option>' + 
-    categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   if (categories.includes(currentVal)) {
     els.templateCatFilter.value = currentVal;
   }
@@ -921,27 +921,28 @@ function renderTemplates() {
   }
 
   container.innerHTML = filtered.map(t => {
-    const riskBadge = t.risk ? `<span class="risk-badge risk-${t.risk.toLowerCase()}">${t.risk}</span>` : '';
+    const riskBadge = t.risk ? `<span class="risk-badge risk-${escapeHtml((t.risk || '').toLowerCase())}">${escapeHtml(t.risk)}</span>` : '';
+    const fields = t.fields || {};
     return `
       <div class="card">
         <div class="card-top">
-          <h4>${t.name}</h4>
+          <h4>${escapeHtml(t.name)}</h4>
           <div style="display: flex; align-items: center; gap: 0.35rem;">
             ${riskBadge}
-            <span class="tag">${t.category}</span>
+            <span class="tag">${escapeHtml(t.category)}</span>
           </div>
         </div>
-        ${t.description ? `<p class="card-desc">${t.description}</p>` : ''}
+        ${t.description ? `<p class="card-desc">${escapeHtml(t.description)}</p>` : ''}
         <div class="card-fields">
-          ${t.fields.filetype ? `<div><strong>filetype:</strong> <code>${t.fields.filetype}</code></div>` : ''}
-          ${t.fields.inurl ? `<div><strong>inurl:</strong> <code>${t.fields.inurl}</code></div>` : ''}
-          ${t.fields.intitle ? `<div><strong>intitle:</strong> <code>${t.fields.intitle}</code></div>` : ''}
-          ${t.fields.exact ? `<div><strong>exact:</strong> <code>"${t.fields.exact}"</code></div>` : ''}
-          ${t.fields.exclude ? `<div><strong>exclude:</strong> <code>${t.fields.exclude}</code></div>` : ''}
+          ${fields.filetype ? `<div><strong>filetype:</strong> <code>${escapeHtml(fields.filetype)}</code></div>` : ''}
+          ${fields.inurl ? `<div><strong>inurl:</strong> <code>${escapeHtml(fields.inurl)}</code></div>` : ''}
+          ${fields.intitle ? `<div><strong>intitle:</strong> <code>${escapeHtml(fields.intitle)}</code></div>` : ''}
+          ${fields.exact ? `<div><strong>exact:</strong> <code>"${escapeHtml(fields.exact)}"</code></div>` : ''}
+          ${fields.exclude ? `<div><strong>exclude:</strong> <code>${escapeHtml(fields.exclude)}</code></div>` : ''}
         </div>
         <div class="card-actions" style="margin-top: auto; padding-top: 0.5rem;">
-          <button class="primary" data-action="load" data-id="${t.id}">Load to Composer</button>
-          <button data-action="delete" data-id="${t.id}">Delete</button>
+          <button class="primary" data-action="load" data-id="${escapeHtml(t.id)}">Load to Composer</button>
+          <button data-action="delete" data-id="${escapeHtml(t.id)}">Delete</button>
         </div>
       </div>
     `;
@@ -1083,13 +1084,13 @@ function renderProfiles() {
   container.innerHTML = state.profiles.map(p => `
     <div class="card">
       <div class="card-top">
-        <h4>${p.name}</h4>
-        <span class="tag">${p.state.engine.toUpperCase()}</span>
+        <h4>${escapeHtml(p.name)}</h4>
+        <span class="tag">${escapeHtml(((p.state && p.state.engine) || '').toUpperCase())}</span>
       </div>
-      <p>Target: <code>${p.state.domain || 'All Domains'}</code></p>
+      <p>Target: <code>${escapeHtml((p.state && p.state.domain) || 'All Domains')}</code></p>
       <div class="card-actions">
-        <button data-action="load" data-id="${p.id}">Load Profile</button>
-        <button data-action="delete" data-id="${p.id}">Delete</button>
+        <button data-action="load" data-id="${escapeHtml(p.id)}">Load Profile</button>
+        <button data-action="delete" data-id="${escapeHtml(p.id)}">Delete</button>
       </div>
     </div>
   `).join('');
@@ -1629,10 +1630,10 @@ function renderEmailList(items) {
 
   els.emailResults.innerHTML = items.map(item => `
     <label class="crt-item">
-      <input type="checkbox" value="${item.email}" data-name="${item.name}">
-      <strong>${item.email}</strong>
-      ${item.name ? `<span class="email-name-tag">(${item.name})</span>` : ''}
-      ${item.year ? `<span class="key-age-tag ${item.year >= 2022 ? 'tag-recent' : 'tag-legacy'}" title="Public key creation year">${item.year}</span>` : ''}
+      <input type="checkbox" value="${escapeHtml(item.email)}" data-name="${escapeHtml(item.name || '')}">
+      <strong>${escapeHtml(item.email)}</strong>
+      ${item.name ? `<span class="email-name-tag">(${escapeHtml(item.name)})</span>` : ''}
+      ${item.year ? `<span class="key-age-tag ${item.year >= 2022 ? 'tag-recent' : 'tag-legacy'}" title="Public key creation year">${escapeHtml(item.year)}</span>` : ''}
     </label>
   `).join('');
 }
@@ -3375,30 +3376,33 @@ function renderAuditLogs() {
 
   container.innerHTML = [...filtered].reverse().map(a => {
     const st = statusMap[a.status] || { label: a.status, class: '' };
+    const isSafeHttp = /^https?:\/\//i.test(a.url || '');
     return `
       <div class="audit-entry">
         <div class="audit-entry-top">
           <div class="audit-status-wrap">
-            <span class="status-badge ${st.class}">${st.label}</span>
-            <select class="audit-status-select" data-action="change-status" data-id="${a.id}" title="Change finding status">
+            <span class="status-badge ${escapeHtml(st.class)}">${escapeHtml(st.label)}</span>
+            <select class="audit-status-select" data-action="change-status" data-id="${escapeHtml(a.id)}" title="Change finding status">
               <option value="investigating" ${a.status === 'investigating' ? 'selected' : ''}>Under Review</option>
               <option value="hit" ${a.status === 'hit' ? 'selected' : ''}>Confirmed</option>
               <option value="false_positive" ${a.status === 'false_positive' ? 'selected' : ''}>False Positive</option>
               <option value="resolved" ${a.status === 'resolved' ? 'selected' : ''}>Fixed</option>
             </select>
           </div>
-          <span class="audit-meta">${new Date(a.timestamp).toLocaleString()} &bull; Engine: ${a.engine.toUpperCase()}</span>
+          <span class="audit-meta">${new Date(a.timestamp).toLocaleString()} &bull; Engine: ${escapeHtml((a.engine || '').toUpperCase())}</span>
         </div>
         <div class="audit-url">
-          <a href="${escapeHtml(a.url)}" target="_blank" rel="noopener noreferrer" title="Live visit (warning: sends requests from your browser to target)">${escapeHtml(a.url)}</a>
+          ${isSafeHttp
+            ? `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener noreferrer" title="Live visit (warning: sends requests from your browser to target)">${escapeHtml(a.url)}</a>`
+            : `<span>${escapeHtml(a.url || '')}</span>`}
         </div>
         <div class="audit-query"><code>${escapeHtml(a.query || 'N/A')}</code></div>
         ${a.notes ? `<div class="audit-notes">${escapeHtml(a.notes).replace(/\n/g, '<br>')}</div>` : ''}
         <div class="audit-entry-bottom">
-          <span class="audit-id-label">ID: ${a.id.slice(-6)}</span>
+          <span class="audit-id-label">ID: ${escapeHtml(String(a.id || '').slice(-6))}</span>
           <div class="audit-entry-actions">
-            <button type="button" class="btn-sm btn-ghost btn-urlscan-action" data-action="urlscan" data-id="${a.id}" title="Passively search historical scans on urlscan.io without sending packets to target">🔍 urlscan</button>
-            <button type="button" class="btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;" data-action="delete" data-id="${a.id}">Delete Entry</button>
+            <button type="button" class="btn-sm btn-ghost btn-urlscan-action" data-action="urlscan" data-id="${escapeHtml(a.id)}" title="Passively search historical scans on urlscan.io without sending packets to target">🔍 urlscan</button>
+            <button type="button" class="btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;" data-action="delete" data-id="${escapeHtml(a.id)}">Delete Entry</button>
           </div>
         </div>
       </div>
@@ -3686,7 +3690,7 @@ function updateExposureCard(templateId) {
   }
   if (els.expTemplateTitle) els.expTemplateTitle.textContent = t.name;
   if (els.expWhatLeaks) els.expWhatLeaks.textContent = t.whatItLeaks || 'Potential data exposure.';
-  if (els.expTruePositive) els.expTruePositive.innerHTML = t.truePositive ? t.truePositive.replace(/`([^`]+)`/g, '<code>$1</code>') : 'Verify content directly.';
+  if (els.expTruePositive) els.expTruePositive.innerHTML = t.truePositive ? escapeHtml(t.truePositive).replace(/`([^`]+)`/g, '<code>$1</code>') : 'Verify content directly.';
   if (els.expRemediation) els.expRemediation.textContent = t.remediation || 'Restrict unauthorized access to sensitive endpoints.';
 
   els.exposureCard.style.display = 'block';
