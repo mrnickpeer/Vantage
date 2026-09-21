@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Vantage",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
   "permissions": [
     "storage",
     "tabs",
-    "downloads",
     "contextMenus"
   ],
   "host_permissions": [
@@ -21,8 +20,7 @@
     "https://cloudflare-dns.com/*",
     "https://dns.google/*",
     "https://internetdb.shodan.io/*",
-    "https://api.shodan.io/*",
-    "https://urlscan.io/*"
+    "https://api.shodan.io/*"
   ],
   "background": {
     "scripts": ["background.js"]
