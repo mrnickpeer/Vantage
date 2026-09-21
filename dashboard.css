@@ -278,6 +278,30 @@ button.primary:hover { background: var(--primary-hover); }
 }
 .crt-item { display: flex; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.85rem; align-items: center; }
 
+/* Email Discovery Results - Single Column List */
+#email-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+#email-results .crt-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.65rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+#email-results .crt-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .crt-status-wrap {
   display: flex;
   align-items: center;

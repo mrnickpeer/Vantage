@@ -1562,13 +1562,19 @@ async function fetchEmails() {
     const emailsMap = new Map();
     const lines = text.split('\n');
     let currentKeyYear = null;
+    let currentKeyTimestamp = null;
 
     lines.forEach(line => {
       if (line.startsWith('pub:')) {
+        currentKeyYear = null;
+        currentKeyTimestamp = null;
         const parts = line.split(':');
         if (parts[4] && /^\d+$/.test(parts[4])) {
           const ts = parseInt(parts[4], 10);
-          if (ts > 0) currentKeyYear = new Date(ts * 1000).getFullYear();
+          if (ts > 0) {
+            currentKeyYear = new Date(ts * 1000).getFullYear();
+            currentKeyTimestamp = ts;
+          }
         }
       } else if (line.startsWith('uid:')) {
         try {
@@ -1576,9 +1582,13 @@ async function fetchEmails() {
           const parts = rawUid.split(':');
           const decodedUid = decodeURIComponent(parts[0] || '');
           let year = currentKeyYear;
+          let timestamp = currentKeyTimestamp;
           if (parts[1] && /^\d+$/.test(parts[1])) {
             const ts = parseInt(parts[1], 10);
-            if (ts > 0) year = new Date(ts * 1000).getFullYear();
+            if (ts > 0) {
+              year = new Date(ts * 1000).getFullYear();
+              timestamp = ts;
+            }
           }
 
           const match = decodedUid.match(/^(.*?)(?:<([^>]+@[^>]+)>)?$/);
@@ -1588,10 +1598,13 @@ async function fetchEmails() {
             if (email && email.toLowerCase().includes(domain.toLowerCase())) {
               const cleanEmail = email.toLowerCase().replace(/^[<"']+|[>"']+$/g, '');
               if (!emailsMap.has(cleanEmail)) {
-                emailsMap.set(cleanEmail, { email: cleanEmail, name, year });
+                emailsMap.set(cleanEmail, { email: cleanEmail, name, year, timestamp });
               } else {
                 const existing = emailsMap.get(cleanEmail);
-                if (year && (!existing.year || year > existing.year)) {
+                if (timestamp && (!existing.timestamp || timestamp > existing.timestamp)) {
+                  existing.timestamp = timestamp;
+                  existing.year = year;
+                } else if (year && (!existing.year || year > existing.year)) {
                   existing.year = year;
                 }
                 if (name && !existing.name) existing.name = name;
@@ -1602,7 +1615,15 @@ async function fetchEmails() {
       }
     });
 
-    currentDiscoveredEmails = Array.from(emailsMap.values()).sort((a, b) => a.email.localeCompare(b.email));
+    // Sort from newest to oldest (by creation timestamp / year descending, ties broken alphabetically)
+    currentDiscoveredEmails = Array.from(emailsMap.values()).sort((a, b) => {
+      const timeA = a.timestamp || (a.year ? new Date(a.year, 0, 1).getTime() / 1000 : 0);
+      const timeB = b.timestamp || (b.year ? new Date(b.year, 0, 1).getTime() / 1000 : 0);
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      return a.email.localeCompare(b.email);
+    });
 
     if (!currentDiscoveredEmails.length) {
       els.emailStatus.innerText = 'No matching domain emails found in public PGP records.';
