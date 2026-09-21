@@ -87,8 +87,8 @@ npm run build
 ```
 
 This creates:
-- `dist/vantage-firefox-v1.1.3.zip` — Ready for upload to the [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/).
-- `dist/vantage-chrome-v1.1.3.zip` — Ready for upload to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
+- `dist/vantage-firefox-v1.1.4.zip` — Ready for upload to the [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/).
+- `dist/vantage-chrome-v1.1.4.zip` — Ready for upload to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 - `dist/firefox/` & `dist/chrome/` — Unpacked development trees.
 
 See [DISTRIBUTION.md](DISTRIBUTION.md) for full store submission guidance and permission justifications.

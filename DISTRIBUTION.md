@@ -10,9 +10,9 @@ The automated build pipeline produces store-ready zip archives inside the `dist/
 
 | Store | File / Path | Format | Notes |
 | :--- | :--- | :--- | :--- |
-| **Firefox Add-ons (AMO)** | `dist/vantage-firefox-v1.1.3.zip` | ZIP archive | Manifest V3 with `background.scripts` & Gecko ID |
-| **Chrome Web Store (CWS)** | `dist/vantage-chrome-v1.1.3.zip` | ZIP archive | Manifest V3 with `background.service_worker` |
-| **Microsoft Edge Add-ons** | `dist/vantage-chrome-v1.1.3.zip` | ZIP archive | Same Chromium Manifest V3 bundle as CWS |
+| **Firefox Add-ons (AMO)** | `dist/vantage-firefox-v1.1.4.zip` | ZIP archive | Manifest V3 with `background.scripts` & Gecko ID |
+| **Chrome Web Store (CWS)** | `dist/vantage-chrome-v1.1.4.zip` | ZIP archive | Manifest V3 with `background.service_worker` |
+| **Microsoft Edge Add-ons** | `dist/vantage-chrome-v1.1.4.zip` | ZIP archive | Same Chromium Manifest V3 bundle as CWS |
 | **Firefox Unpacked** | `dist/firefox/` | Directory | For temporary testing in Firefox |
 | **Chrome / Edge Unpacked** | `dist/chrome/` | Directory | For "Load unpacked" in Chrome/Brave/Edge |
 
@@ -32,7 +32,7 @@ The automated build pipeline produces store-ready zip archives inside the `dist/
 2. Click **"Submit a New Add-on"**.
 3. Choose **"On this site"** (to distribute via Mozilla's directory) or "On your own" (self-hosted signed XPI).
 4. When prompted to upload your add-on file, upload:
-   `dist/vantage-firefox-v1.1.3.zip`
+   `dist/vantage-firefox-v1.1.4.zip`
 5. The AMO automated validator will run. Because all assets are plain, unminified JavaScript with zero remote code execution, it will pass initial validation.
 6. Provide listing metadata:
    - **Name:** `Vantage`
@@ -48,7 +48,7 @@ The automated build pipeline produces store-ready zip archives inside the `dist/
 1. Log in to the [Chrome Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 2. Click **"New Item"** in the top right (or edit existing item draft).
 3. Drag and drop:
-   `dist/vantage-chrome-v1.1.3.zip`
+   `dist/vantage-chrome-v1.1.4.zip`
 4. Fill in the Store Listing tabs:
    - **Product Name:** `Vantage`
    - **Summary Description (<=132 chars):**  
@@ -68,7 +68,7 @@ Microsoft Edge runs on the Chromium engine and natively accepts the **Chrome Web
 1. Log in to the [Microsoft Partner Center Dashboard](https://partner.microsoft.com/dashboard/microsoftedge).
 2. Click **"Create new extension"**.
 3. When prompted to upload the extension package, upload:
-   `dist/vantage-chrome-v1.1.3.zip` (for Vantage) or `dist/visage-chrome-v1.0.1.zip` (for Visage).
+   `dist/vantage-chrome-v1.1.4.zip` (for Vantage) or `dist/visage-chrome-v1.0.2.zip` (for Visage).
    *(Do NOT upload the Firefox zip, as Edge requires `background.service_worker` rather than `background.scripts`)*.
 4. Complete the Store Listing:
    - **Extension Name:** `Vantage` (or `Visage`)
