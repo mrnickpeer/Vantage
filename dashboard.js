@@ -1,6 +1,32 @@
 // Cross-browser API shim for Firefox and Chrome MV3
 if (typeof browser === 'undefined') {
-  var browser = globalThis.browser || globalThis.chrome;
+  var browser = globalThis.browser || globalThis.chrome || {};
+}
+if (!browser.storage || !browser.storage.local) {
+  const _store = {};
+  browser.storage = {
+    local: {
+      get: async (keys) => {
+        const res = {};
+        if (Array.isArray(keys)) {
+          keys.forEach(k => { if (_store[k] !== undefined) res[k] = _store[k]; });
+        } else if (typeof keys === 'string') {
+          if (_store[keys] !== undefined) res[keys] = _store[keys];
+        } else if (keys && typeof keys === 'object') {
+          Object.keys(keys).forEach(k => { res[k] = _store[k] !== undefined ? _store[k] : keys[k]; });
+        }
+        return res;
+      },
+      set: async (obj) => { Object.assign(_store, obj); }
+    },
+    onChanged: { addListener: () => {} }
+  };
+}
+if (!browser.tabs) {
+  browser.tabs = { query: async () => [], create: async () => {} };
+}
+if (!browser.runtime) {
+  browser.runtime = { getURL: (p) => p };
 }
 
 const TEMPLATE_VERSION = 4;

@@ -13,6 +13,19 @@ All discovery is **100% passive and zero-touch**—Vantage queries public third-
 
 ---
 
+## 📸 Workstation Screenshots
+
+### 1. Attack Surface Reconnaissance & Dork Composer
+![Vantage Dashboard Overview](screenshots/vantage_dashboard.png)
+
+### 2. CRT.SH Certificate Scope & Subdomain Subtraction
+![Vantage Subdomain Enumeration](screenshots/vantage_subdomains.png)
+
+### 3. DNS Zone Intelligence & Cloud/SaaS Infrastructure
+![Vantage DNS & Infrastructure](screenshots/vantage_dns.png)
+
+---
+
 ## ✨ Key Features
 
 ### 🧭 1. Guided 6-Step Audit Methodology

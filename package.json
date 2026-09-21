@@ -1,6 +1,6 @@
 {
   "name": "vantage",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
   "scripts": {
     "test": "node -c dashboard.js && node -c background.js",
