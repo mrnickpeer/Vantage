@@ -1,17 +1,19 @@
 /* dashboard.css */
 :root {
-  --bg: #18181b;
-  --surface: #27272a;
-  --surface-hover: #3f3f46;
-  --border: #3f3f46;
-  --text: #e4e4e7;
-  --text-muted: #a1a1aa;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
   --danger: #ef4444;
   --warning: #f59e0b;
-  --font-sans: system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, monospace;
+  --success: #10b981;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -154,18 +156,21 @@ body:not(.show-guidance) .guidance-item {
 
 input[type="text"], textarea, select {
   width: 100%;
-  background: var(--bg);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 0.5rem;
-  border-radius: 4px;
-  font-family: var(--font-mono);
+  padding: 0.55rem 0.6rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
+  transition: all 0.2s ease;
 }
 
 input[type="text"]:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .preview-area { margin-top: auto; padding-top: 1.2rem; border-top: 1px solid var(--border); }
@@ -204,16 +209,32 @@ button:hover { background: var(--surface-hover); }
 button.primary { background: var(--primary); border-color: var(--primary); color: white; }
 button.primary:hover { background: var(--primary-hover); }
 
-.tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.tabs { 
+  display: inline-flex; 
+  gap: 0.25rem; 
+  margin-bottom: 1.5rem; 
+  background: rgba(0, 0, 0, 0.2); 
+  padding: 4px; 
+  border-radius: 8px; 
+  border: 1px solid var(--border); 
+}
 .tab-btn {
   background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  padding: 0.5rem 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
   color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
 }
-.tab-btn.active { color: var(--text); border-color: var(--primary); }
+.tab-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.03); }
+.tab-btn.active { 
+  color: var(--text); 
+  background: var(--surface-hover); 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
+  border-color: rgba(255, 255, 255, 0.08);
+}
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -755,6 +776,7 @@ button.primary:hover { background: var(--primary-hover); }
 }
 
 .checklist-steps.collapsed {
+  display: none !important;
   display: none;
 }
 
@@ -1643,4 +1665,289 @@ button.primary:hover { background: var(--primary-hover); }
     transform: translateY(0);
     opacity: 1;
   }
+}
+/* --- ACADEMY VS TACTICAL MODE OVERRIDES --- */
+body:not(.show-guidance) .guidance-item,
+body:not(.show-guidance) .guided-checklist,
+body:not(.show-guidance) .pattern-banner {
+  display: none !important;
+}
+
+body:not(.show-guidance) .col-left {
+  width: 320px;
+}
+
+body:not(.show-guidance) .layout {
+  grid-template-columns: 320px 1fr;
+}
+
+body:not(.show-guidance) .composer {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+body:not(.show-guidance) .dns-card {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+body:not(.show-guidance) .crt-results {
+  max-height: 75vh;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Tactical Mode Raw Omnibox visibility */
+.tactical-omnibox {
+  display: none;
+}
+
+body:not(.show-guidance) .tactical-omnibox {
+  display: block;
+}
+
+body:not(.show-guidance) .academy-inputs {
+  display: none;
+}
+
+/* Mode Toggle Styling */
+.mode-toggle {
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.mode-toggle input {
+  display: none;
+}
+.mode-toggle-track {
+  display: flex;
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  width: 100%;
+  height: 28px;
+  align-items: center;
+  justify-content: space-between;
+}
+.mode-tactical-label, .mode-guided-label {
+  width: 50%;
+  text-align: center;
+  z-index: 2;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+.mode-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  height: calc(100% - 4px);
+  background: var(--surface-hover);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  z-index: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.mode-toggle input:checked ~ .mode-toggle-track .mode-toggle-thumb {
+  transform: translateX(100%);
+  background: var(--primary);
+}
+.mode-toggle input:checked ~ .mode-toggle-track .mode-guided-label {
+  color: #fff;
+}
+.mode-toggle input:not(:checked) ~ .mode-toggle-track .mode-tactical-label {
+  color: #fff;
+}
+
+/* Horizontal Stepper UI for Guided Mode */
+.checklist-steps {
+  display: flex;
+  flex-direction: row !important;
+  gap: 0;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding: 1rem 0 0.5rem 0;
+  border: none;
+}
+
+.step-card {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  position: relative;
+  text-align: center;
+  padding: 0 0.5rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The connecting line */
+.step-card:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  right: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border-strong);
+  z-index: 1;
+}
+
+.step-card.completed:not(:last-child)::after {
+  background: var(--success);
+}
+
+.step-header {
+  position: relative;
+  z-index: 2;
+  background: var(--surface);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border-strong);
+  margin: 0 auto;
+}
+
+.step-card.completed .step-header {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.step-badge {
+  display: none; /* Hide 'Step 1' text, use circle */
+}
+
+.step-help-btn {
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--info);
+}
+
+.step-status {
+  font-size: 0.8rem;
+}
+
+.step-card strong {
+  font-size: 0.8rem;
+  color: var(--text);
+  margin-top: 0.4rem;
+}
+
+.step-card p {
+  display: none; /* Hide the descriptive text for a sleeker look */
+}
+
+.step-btn {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--primary-alpha);
+  color: var(--info);
+  border: 1px solid var(--info);
+  border-radius: 4px;
+  margin-top: auto;
+  cursor: pointer;
+}
+.step-btn:hover {
+  background: var(--info);
+  color: #fff;
+}
+
+/* =========================================
+   2026 PREMIUM UI POLISH & MICRO-INTERACTIONS
+   ========================================= */
+
+/* 1. Native-like Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 2px solid var(--bg); /* Adds breathing room to the scrollbar */
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 2. Tactile Button Physics */
+button {
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s, border-color 0.2s !important;
+}
+button:active {
+  transform: scale(0.96) !important;
+}
+
+/* 3. Premium Primary Button Lighting */
+button.primary {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(0, 0, 0, 0.4) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+button.primary:hover {
+  background: linear-gradient(180deg, var(--primary-hover) 0%, #4338ca 100%) !important;
+  box-shadow: 0 4px 12px var(--primary-alpha), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 4. Subdued Inner Highlights (3D Card Effect) */
+.exposure-card, .guided-checklist, .card-form, .audit-entry, .dns-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* 5. Glassmorphism / Sticky Floating Tabs */
+.col-right {
+  position: relative;
+}
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  /* The slight transparency allows the blurred background to show through */
+  background: rgba(15, 23, 42, 0.65) !important; 
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  margin-top: -0.5rem; /* pulls it up slightly into the padding space */
+}
+
+/* Enhance Tab active state with glow */
+.tab-btn.active {
+  background: var(--surface) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255, 0.1) !important;
+}
+
+/* 6. Subtle Input Lighting */
+input[type="text"]:focus, textarea:focus, select:focus {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px var(--primary-alpha), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }

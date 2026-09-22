@@ -12,21 +12,33 @@
 <body>
   <div class="layout">
     <aside class="col-left">
-      <header>
-        <div>
-          <h1>Vantage</h1>
-          <span class="sub-heading">Attack Surface & Recon Suite</span>
+      <header style="display: flex; flex-direction: column; align-items: stretch; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Line 1: Branding -->
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <img src="icons/icon.svg" alt="Vantage Logo" style="width: 48px; height: 48px;">
+          <div>
+            <h1>Vantage</h1>
+            <span class="sub-heading">Attack Surface & Recon Suite</span>
+          </div>
         </div>
-        <div class="header-right">
-          <label class="guidance-toggle" title="Toggle beginner guidance, threat context cards, and operator explanations">
-            <input type="checkbox" id="toggle-guidance" checked>
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            <span class="toggle-label">🎓 Guidance</span>
-          </label>
-          <div class="engines">
-            <label><input type="radio" name="engine" value="google" checked> Google</label>
-            <label><input type="radio" name="engine" value="bing"> Bing</label>
-            <label><input type="radio" name="engine" value="ddg"> DDG</label>
+        
+        <!-- Line 2: Mode Toggle -->
+        <label class="mode-toggle" title="Switch between Guided Mode and Tactical Mode">
+          <input type="checkbox" id="toggle-guidance" checked>
+          <div class="mode-toggle-track" style="width: 100%; height: 34px; padding: 3px;">
+            <span class="mode-tactical-label" style="display: flex; align-items: center; justify-content: center; white-space: nowrap;">⚡ Tactical Mode</span>
+            <span class="mode-guided-label" style="display: flex; align-items: center; justify-content: center; white-space: nowrap;">🎓 Guided Mode</span>
+            <div class="mode-toggle-thumb"></div>
+          </div>
+        </label>
+
+        <!-- Line 3: Engine Selector -->
+        <div class="engines-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0 0.25rem;">
+          <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Engine</span>
+          <div class="engines" style="display: flex; gap: 0.75rem;">
+            <label style="margin: 0;"><input type="radio" name="engine" value="google" checked> Google</label>
+            <label style="margin: 0;"><input type="radio" name="engine" value="bing"> Bing</label>
+            <label style="margin: 0;"><input type="radio" name="engine" value="ddg"> DDG</label>
           </div>
         </div>
       </header>
@@ -61,32 +73,40 @@
         </div>
 
         <div class="input-group">
-          <label for="f-domain">Target Domain <span class="guidance-item">(site:) restricts search to this host</span></label>
+          <label for="f-domain">🌐 Target Domain <span class="guidance-item">(site:) restricts search to this host</span></label>
           <div class="input-inline">
             <input type="text" id="f-domain" placeholder="example.com">
             <button type="button" id="btn-use-tab" title="Extract domain from active tab">Current Tab</button>
           </div>
         </div>
 
-        <div class="input-group">
-          <label for="f-filetype">File Type <span class="guidance-item">(filetype:) targets extensions like env, sql, pdf</span></label>
-          <input type="text" id="f-filetype" placeholder="pdf, xlsx, json, env">
+        <div class="academy-inputs">
+
+          <div class="input-group">
+            <label for="f-filetype">📄 File Type <span class="guidance-item">(filetype:) targets extensions like env, sql, pdf</span></label>
+            <input type="text" id="f-filetype" placeholder="pdf, xlsx, json, env">
+          </div>
+          <div class="input-group">
+            <label for="f-inurl">🔗 In URL <span class="guidance-item">(inurl:) finds endpoints like /admin, /staging</span></label>
+            <input type="text" id="f-inurl" placeholder="staging, api, dev, login">
+          </div>
+          <div class="input-group">
+            <label for="f-intitle">🏷️ In Title <span class="guidance-item">(intitle:) searches HTML page title</span></label>
+            <input type="text" id="f-intitle" placeholder="index of, dashboard">
+          </div>
+          <div class="input-group">
+            <label for="f-exact">" " Exact Phrases <span class="guidance-item">("...") forces verbatim quoted phrase</span></label>
+            <input type="text" id="f-exact" placeholder="password, API_KEY, confidential">
+          </div>
+          <div class="input-group">
+            <label for="f-exclude">🚫 Exclusions <span class="guidance-item">(-site:) removes known domains or noise</span></label>
+            <input type="text" id="f-exclude" placeholder="-www -blog -site:github.com">
+          </div>
         </div>
-        <div class="input-group">
-          <label for="f-inurl">In URL <span class="guidance-item">(inurl:) finds endpoints like /admin, /staging</span></label>
-          <input type="text" id="f-inurl" placeholder="staging, api, dev, login">
-        </div>
-        <div class="input-group">
-          <label for="f-intitle">In Title <span class="guidance-item">(intitle:) searches HTML page title</span></label>
-          <input type="text" id="f-intitle" placeholder="index of, dashboard">
-        </div>
-        <div class="input-group">
-          <label for="f-exact">Exact Phrases <span class="guidance-item">("...") forces verbatim quoted phrase</span></label>
-          <input type="text" id="f-exact" placeholder="password, API_KEY, confidential">
-        </div>
-        <div class="input-group">
-          <label for="f-exclude">Exclusions <span class="guidance-item">(-site:) removes known domains or noise</span></label>
-          <input type="text" id="f-exclude" placeholder="-www -blog -site:github.com">
+
+        <div class="tactical-omnibox input-group">
+          <label>⚡ Raw Query Omnibox</label>
+          <textarea id="f-omnibox" placeholder="site:example.com ext:env &#34;DB_PASSWORD&#34;" style="height: 120px;"></textarea>
         </div>
 
         <div class="temporal-row">
