@@ -15,20 +15,27 @@ All discovery is **100% passive and zero-touch**—Vantage queries public third-
 
 ## 📸 Workstation Screenshots
 
-### 1. Attack Surface Reconnaissance & Dork Composer
+### 1. Guided Mode: 6-Step Methodology & Templates Taxonomy
 ![Vantage Dashboard Overview](screenshots/vantage_dashboard.png)
 
-### 2. CRT.SH Certificate Scope & Subdomain Subtraction
+### 2. Tactical Mode: Power-User Omnibox & High-Speed Recon (v2.0)
+![Vantage Tactical Mode](screenshots/vantage_tactical.png)
+
+### 3. CRT.SH Certificate Scope & Subdomain Subtraction
 ![Vantage Subdomain Enumeration](screenshots/vantage_subdomains.png)
 
-### 3. DNS Zone Intelligence & Cloud/SaaS Infrastructure
+### 4. DNS Zone Intelligence & Cloud/SaaS Infrastructure
 ![Vantage DNS & Infrastructure](screenshots/vantage_dns.png)
 
 ---
 
 ## ✨ Key Features
 
-### 🧭 1. Guided 6-Step Audit Methodology
+### ⚡ 1. Dual-Audience Workflow: Guided Mode vs. Tactical Mode (New in v2.0)
+- **🎓 Guided Mode**: Built-in 6-step illuminated timeline wizard, interactive "What & Why" educational modals, and granular composer inputs with real-time syntax linting—designed to teach structured reconnaissance tradecraft to junior analysts.
+- **⚡ Tactical Mode**: Training wheels off. Strips out the methodology stepper to reclaim full vertical screen real estate, and replaces the multi-field composer with a direct **Raw Query Omnibox** for rapid, terminal-like threat-hunting execution.
+
+### 🧭 2. Guided 6-Step Audit Methodology
 A built-in tactical roadmap taking analysts step-by-step through a standard reconnaissance lifecycle:
 1. **Scope Target**: Extract root apex domain and baseline boundaries from the active tab.
 2. **Map Subdomains**: Query public Certificate Transparency (CT) logs via `crt.sh`.
@@ -39,23 +46,23 @@ A built-in tactical roadmap taking analysts step-by-step through a standard reco
 
 *Includes interactive "What & Why" educational modals on every step for analysts building tradecraft.*
 
-### 🏢 2. Multi-Domain SAN Sibling Discovery
+### 🏢 3. Multi-Domain SAN Sibling Discovery
 Cross-correlates multi-domain SSL/TLS certificates to automatically surface corporate sibling apexes, sister subsidiaries, and acquired brands (e.g. discovering subsidiary apexes and out-of-band SaaS domains from primary certificates).
 
-### 🌐 3. Regional Internet Registry (RIR) Netblocks
+### 🌐 4. Regional Internet Registry (RIR) Netblocks
 Directly queries ARIN and RIPE RDAP registries to discover corporate IP blocks registered directly to the target organization, complete with PTR reverse DNS probing and SOA zone master identification.
 
-### ⚡ 4. Shodan InternetDB & BYOK Integration
+### ⚡ 5. Shodan InternetDB & BYOK Integration
 - **InternetDB (Free & Built-in)**: Instant host intelligence with zero API key required—surfaces open ports, service tags, and known vulnerabilities (CVEs).
 - **Personal Shodan BYOK**: Seamless drawer allowing analysts to connect their personal Shodan API key for deep banner inspection, OS fingerprinting, and full host history.
 
-### 🛡️ 5. Precision Search Syntax Builder & Linter
+### 🛡️ 6. Precision Search Syntax Builder & Linter
 - Real-time compiler for Google, Bing, and DuckDuckGo search syntax.
 - Built-in linter catching common operator syntax traps, whitespace bugs, and quote errors.
 - Temporal filtering (`24h`, `week`, `month`, `year`) and Google Verbatim mode (`&tbs=li:1`) toggles.
 - Pre-configured template library categorized by risk (Critical, High, Medium, Low).
 
-### 📝 6. Obsidian Vault Triage & Export
+### 📝 7. Obsidian Vault Triage & Export
 One-click export of discovered findings, analyst notes, and remediation status into clean, pre-tagged Markdown notes ready to drop straight into your vulnerability management or triage vault.
 
 ---
@@ -87,8 +94,8 @@ npm run build
 ```
 
 This creates:
-- `dist/vantage-firefox-v1.1.5.zip` — Ready for upload to the [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/).
-- `dist/vantage-chrome-v1.1.5.zip` — Ready for upload to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
+- `dist/vantage-firefox-v2.0.0.zip` — Ready for upload to the [Firefox Add-on Developer Hub](https://addons.mozilla.org/developers/).
+- `dist/vantage-chrome-v2.0.0.zip` — Ready for upload to the [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
 - `dist/firefox/` & `dist/chrome/` — Unpacked development trees.
 
 See [DISTRIBUTION.md](DISTRIBUTION.md) for full store submission guidance and permission justifications.
