@@ -58,6 +58,7 @@ fs.mkdirSync(CHROME_DIST, { recursive: true });
 const commonFiles = [
   'dashboard.html',
   'dashboard.css',
+  'cytoscape.min.js',
   'dashboard.js',
   'background.js'
 ];
@@ -113,7 +114,7 @@ console.log('\n\x1b[33m%s\x1b[0m', '[5/5] Verifying archive integrity...');
 const ffList = execSync(`unzip -l "${ffZipPath}"`, { encoding: 'utf8' });
 const chromeList = execSync(`unzip -l "${chromeZipPath}"`, { encoding: 'utf8' });
 
-const requiredFiles = ['manifest.json', 'dashboard.html', 'dashboard.js', 'background.js', 'icons/icon-128.png'];
+const requiredFiles = ['manifest.json', 'dashboard.html', 'cytoscape.min.js', 'dashboard.js', 'background.js', 'icons/icon-128.png'];
 for (const file of requiredFiles) {
   if (!ffList.includes(file)) {
     console.error(`  \x1b[31m✖ Missing ${file} in Firefox zip!\x1b[0m`);

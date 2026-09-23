@@ -1293,6 +1293,7 @@ async function fetchCrt(queryMode = 'wildcard') {
     });
 
     currentCrtHosts = Array.from(subs).sort();
+    if (typeof updateGraph === 'function') updateGraph();
     const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
 
     if (!currentCrtHosts.length) {
@@ -2082,6 +2083,7 @@ async function fetchAndRenderDnsZone(targetDomain) {
 
     currentDnsZone = zone;
     renderDnsZone(zone);
+    if (typeof updateGraph === 'function') updateGraph();
     return zone;
   } catch (err) {
     console.warn('Failed to fetch DNS zone:', err);
@@ -2432,6 +2434,7 @@ async function fetchInfra(isCustomKeywordSearch = false) {
 
     els.infraStatus.innerText = `Reconnaissance complete: Found ${currentRelatedDomains.length} related domains and ${currentNetblocks.length} global netblocks.`;
     updateChecklist();
+    if (typeof updateGraph === 'function') updateGraph();
     showToast(`Discovered ${currentRelatedDomains.length} related domains and ${currentNetblocks.length} netblocks!`);
   } catch (err) {
     els.infraStatus.innerText = `Reconnaissance error: ${err.message}`;
@@ -3908,6 +3911,13 @@ function switchTab(tabId) {
       els.infraKeyword.value = els.domain.value.trim();
     }
   }
+  if (tabId === 'tab-graph') {
+    setTimeout(() => {
+      if (typeof updateGraph === 'function') {
+        updateGraph();
+      }
+    }, 50);
+  }
 }
 
 // Email Pattern Deducer & Quick Dork
@@ -3992,3 +4002,270 @@ function loadEmailPatternDork() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ==========================================
+// Visual Link Analysis (Node Graphing)
+// ==========================================
+let cyGraph = null;
+
+function runLayout(isInitial = false) {
+  if (!cyGraph) return;
+  cyGraph.layout({
+      name: 'cose',
+      idealEdgeLength: 60,
+      nodeOverlap: 10,
+      refresh: 20,
+      fit: true,
+      padding: 30,
+      randomize: isInitial,
+      componentSpacing: 50,
+      nodeRepulsion: 80000,
+      edgeElasticity: 100,
+      nestingFactor: 1.2,
+      gravity: 100
+  }).run();
+}
+
+function initGraph() {
+  const container = document.getElementById('cy');
+  if (!container) return;
+
+  if (cyGraph) {
+    cyGraph.destroy();
+  }
+
+  cyGraph = cytoscape({
+    container: container,
+    elements: [],
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#3b82f6',
+          'label': 'data(id)',
+          'color': '#f8fafc',
+          'text-valign': 'center',
+          'text-halign': 'right',
+          'text-margin-x': 6,
+          'font-size': '10px',
+          'text-outline-color': '#0f172a',
+          'text-outline-width': 2,
+          'width': 14,
+          'height': 14,
+          'shape': 'ellipse',
+          'transition-property': 'opacity, background-color',
+          'transition-duration': '0.2s',
+          'min-zoomed-font-size': 7
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1,
+          'line-color': '#334155',
+          'curve-style': 'haystack',
+          'haystack-radius': 0,
+          'opacity': 0.4,
+          'transition-property': 'opacity, line-color, width',
+          'transition-duration': '0.2s'
+        }
+      },
+      {
+        selector: '.root',
+        style: {
+          'background-color': '#fbbf24',
+          'color': '#fbbf24',
+          'text-outline-width': 2,
+          'font-weight': 'bold',
+          'font-size': '14px',
+          'width': 28,
+          'height': 28,
+          'shape': 'hexagon'
+        }
+      },
+      {
+        selector: '.category',
+        style: {
+          'color': '#f8fafc',
+          'label': 'data(label)',
+          'shape': 'round-rectangle',
+          'width': 'label',
+          'height': 'label',
+          'padding': '8px',
+          'font-size': '11px',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'text-margin-x': 0,
+          'border-width': 2,
+          'cursor': 'pointer'
+        }
+      },
+      { selector: 'node[id="cat-sub"]', style: { 'background-color': '#064e3b', 'border-color': '#10b981' } },
+      { selector: 'node[id="cat-a"]', style: { 'background-color': '#7f1d1d', 'border-color': '#ef4444' } },
+      { selector: 'node[id="cat-mx"]', style: { 'background-color': '#4c1d95', 'border-color': '#8b5cf6' } },
+      { selector: 'node[id="cat-ns"]', style: { 'background-color': '#831843', 'border-color': '#ec4899' } },
+      { selector: 'node[id="cat-rel"]', style: { 'background-color': '#164e63', 'border-color': '#0ea5e9' } },
+      { selector: 'node[id="cat-net"]', style: { 'background-color': '#450a0a', 'border-color': '#f87171' } },
+
+      { selector: '.subdomain', style: { 'background-color': '#10b981' } },
+      { selector: '.ip', style: { 'background-color': '#ef4444', 'width': 20, 'height': 20, 'shape': 'diamond' } },
+      { selector: '.mx', style: { 'background-color': '#8b5cf6', 'shape': 'triangle' } },
+      { selector: '.ns', style: { 'background-color': '#ec4899', 'shape': 'triangle' } },
+      { selector: '.sibling', style: { 'background-color': '#0ea5e9' } },
+
+      {
+        selector: '.dimmed',
+        style: {
+          'opacity': 0.1
+        }
+      },
+      {
+        selector: '.highlighted-edge',
+        style: {
+          'opacity': 0.9,
+          'line-color': '#fbbf24',
+          'width': 2,
+          'z-index': 10
+        }
+      }
+    ],
+    layout: { name: 'preset' } // Dummy initial layout
+  });
+
+  // Expand / Collapse Category Hubs
+  cyGraph.on('tap', 'node.category', function(evt){
+    const node = evt.target;
+    const isCollapsed = node.data('collapsed');
+    const childNodes = node.outgoers('node');
+    const childEdges = node.outgoers('edge');
+
+    if (isCollapsed) {
+      node.data('collapsed', false);
+      node.data('label', `${node.data('baseLabel')} (${node.data('count')}) [-]`);
+      childNodes.style('display', 'element');
+      childEdges.style('display', 'element');
+    } else {
+      node.data('collapsed', true);
+      node.data('label', `${node.data('baseLabel')} (${node.data('count')}) [+]`);
+      childNodes.style('display', 'none');
+      childEdges.style('display', 'none');
+    }
+    runLayout(false);
+  });
+
+  // Enable node double click to copy
+  cyGraph.on('dblclick', 'node', function(evt){
+    const node = evt.target;
+    if (!node.hasClass('category') && !node.hasClass('root')) {
+      navigator.clipboard.writeText(node.id());
+      showToast(`Copied to clipboard: ${node.id()}`);
+    }
+  });
+
+  // Hover effect to highlight neighborhood
+  cyGraph.on('mouseover', 'node', function(evt){
+    const node = evt.target;
+    const neighborhood = node.neighborhood().add(node);
+    
+    cyGraph.elements().addClass('dimmed');
+    neighborhood.removeClass('dimmed');
+    node.connectedEdges().addClass('highlighted-edge');
+  });
+
+  cyGraph.on('mouseout', 'node', function(evt){
+    cyGraph.elements().removeClass('dimmed');
+    cyGraph.edges().removeClass('highlighted-edge');
+  });
+}
+
+function updateGraph() {
+  if (!document.getElementById('cy')) return;
+  if (!cyGraph) initGraph();
+  if (!cyGraph) return;
+
+  const rootDomain = els.domain.value.trim();
+  if (!rootDomain) return;
+
+  const elements = [];
+  elements.push({ data: { id: rootDomain }, classes: 'root' });
+
+  // Gather Data
+  const subdomains = Array.isArray(currentCrtHosts) ? currentCrtHosts.filter(h => h !== rootDomain) : [];
+  const aRecords = currentDnsZone && currentDnsZone.a ? currentDnsZone.a : [];
+  const aaaaRecords = currentDnsZone && currentDnsZone.aaaa ? currentDnsZone.aaaa : [];
+  const apexHosts = [...aRecords, ...aaaaRecords];
+  const mxRecords = currentDnsZone && currentDnsZone.mx ? currentDnsZone.mx.map(m => m.host) : [];
+  const nsRecords = currentDnsZone && currentDnsZone.ns ? currentDnsZone.ns.map(n => n.host) : [];
+  const siblings = Array.isArray(currentRelatedDomains) ? currentRelatedDomains.filter(rd => rd.domain !== rootDomain).map(rd => rd.domain) : [];
+  const netblocks = Array.isArray(currentNetblocks) ? currentNetblocks.map(nb => nb.cidr) : [];
+
+  function addCategory(catId, label, items, nodeClass) {
+    if (!items || items.length === 0) return;
+    
+    // De-duplicate items just in case
+    const uniqueItems = [...new Set(items)];
+    const maxItems = 50;
+    const isCapped = uniqueItems.length > maxItems;
+    const displayItems = uniqueItems.slice(0, maxItems);
+    
+    const countStr = isCapped ? `${maxItems} of ${uniqueItems.length}` : uniqueItems.length;
+
+    elements.push({ 
+      data: { 
+        id: catId, 
+        baseLabel: label, 
+        count: countStr, 
+        label: `${label} (${countStr}) [+]`,
+        collapsed: true 
+      }, 
+      classes: 'category' 
+    });
+    elements.push({ data: { id: `edge-root-${catId}`, source: rootDomain, target: catId } });
+
+    displayItems.forEach(item => {
+      // Because a host might be an MX and a Subdomain, we prefix IDs to keep them bound to the hub physically
+      const childId = `${catId}-${item}`;
+      elements.push({ 
+        data: { id: childId, label: item }, 
+        classes: `child-node ${nodeClass}`
+      });
+      elements.push({ 
+        data: { id: `edge-${childId}`, source: catId, target: childId },
+        classes: 'child-edge'
+      });
+    });
+  }
+
+  addCategory('cat-sub', 'Subdomains', subdomains, 'subdomain');
+  addCategory('cat-a', 'Apex Hosts', apexHosts, 'ip');
+  addCategory('cat-mx', 'Mail Servers', mxRecords, 'mx');
+  addCategory('cat-ns', 'Nameservers', nsRecords, 'ns');
+  addCategory('cat-rel', 'Corporate Siblings', siblings, 'sibling');
+  addCategory('cat-net', 'Netblocks', netblocks, 'ip');
+
+  cyGraph.elements().remove();
+  
+  try {
+    cyGraph.add(elements);
+    // Set initial display to none for all children so they are collapsed by default
+    cyGraph.nodes('.child-node').style('display', 'none');
+    cyGraph.edges('.child-edge').style('display', 'none');
+  } catch (e) {
+    console.warn('Graph add error', e);
+  }
+  
+  runLayout(true);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnRefresh = document.getElementById('btn-refresh-graph');
+    if(btnRefresh) btnRefresh.addEventListener('click', updateGraph);
+    
+    const btnClear = document.getElementById('btn-clear-graph');
+    if(btnClear) btnClear.addEventListener('click', () => {
+        if(cyGraph) {
+          cyGraph.elements().remove();
+          cyGraph.add({ data: { id: els.domain.value.trim() || 'Target' }, classes: 'root' });
+        }
+    });
+});
