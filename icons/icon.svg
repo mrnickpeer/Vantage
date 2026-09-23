@@ -1,98 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <defs>
-    <!-- Background Gradient: Deep Obsidian Navy to Oceanic Abyss -->
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#061325"/>
-      <stop offset="50%" stop-color="#0a2544"/>
-      <stop offset="100%" stop-color="#020814"/>
+    <linearGradient id="bg_1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
     </linearGradient>
 
-    <!-- Primary Accent Gradient: Vibrant Electric Cyan to Deep Cobalt Blue -->
-    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f0ff"/>
-      <stop offset="50%" stop-color="#0ea5e9"/>
-      <stop offset="100%" stop-color="#2563eb"/>
+    <linearGradient id="v_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
     </linearGradient>
 
-    <!-- Passive Recon Radar Sweep -->
-    <linearGradient id="sweep" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.32"/>
-      <stop offset="60%" stop-color="#0284c7" stop-opacity="0.1"/>
-      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
-    </linearGradient>
-
-    <!-- Exposure Alert / Vulnerability Beacon Gold -->
-    <linearGradient id="alert" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef08a"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
-    </linearGradient>
+    <filter id="glow_1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
   </defs>
 
-  <!-- Outer Card (Consistent V-Suite geometry: 120x120, rx=28) -->
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bg)" stroke="url(#accent)" stroke-width="3"/>
+  <!-- App Icon Base -->
+  <rect x="0" y="0" width="128" height="128" rx="32" fill="url(#bg_1)"/>
+  
+  <!-- Subtle inner glowing ring -->
+  <circle cx="64" cy="64" r="42" fill="none" stroke="url(#v_gradient)" stroke-width="2" opacity="0.3"/>
 
-  <!-- Tactical Radar & Range Rings -->
-  <circle cx="64" cy="64" r="50" fill="none" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>
-  <circle cx="64" cy="64" r="38" fill="none" stroke="#00f0ff" stroke-width="1" stroke-dasharray="4 4" opacity="0.45"/>
-  <circle cx="64" cy="64" r="22" fill="none" stroke="#38bdf8" stroke-width="1" stroke-dasharray="2 2" opacity="0.3"/>
+  <!-- Bold, ultra-modern fluid 'V' representing Vantage and Nodes -->
+  <path d="M 36 44 L 64 86 L 92 44" fill="none" stroke="url(#v_gradient)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow_1)"/>
 
-  <!-- Target Corner Brackets -->
-  <path d="M 30 46 L 30 30 L 46 30" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 98 46 L 98 30 L 82 30" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 30 82 L 30 98 L 46 98" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 98 82 L 98 98 L 82 98" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Passive Radar Sweep (Surveying Perimeter) -->
-  <path d="M 64 64 L 64 26 A 38 38 0 0 1 100 52 Z" fill="url(#sweep)"/>
-  <line x1="64" y1="64" x2="100" y2="52" stroke="#00f0ff" stroke-width="1.5" opacity="0.85" stroke-linecap="round"/>
-
-  <!-- Corporate Perimeter Latitude/Longitude Grid -->
-  <ellipse cx="64" cy="64" rx="42" ry="18" fill="none" stroke="#0369a1" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
-
-  <!-- High-Ground Horizon Ridge (Vantage Point Baseline) -->
-  <path d="M 32 94 C 48 84, 80 84, 96 94" fill="none" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.55"/>
-
-  <!-- Corporate Infrastructure Network Topology (Attack Surface Tree) -->
-  <!-- Apex Domain to Left Subdomain -->
-  <path d="M 64 36 L 40 64" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
-  <!-- Apex Domain to Right Subdomain -->
-  <path d="M 64 36 L 88 64" stroke="url(#accent)" stroke-width="3" stroke-linecap="round"/>
-  <!-- Central Pillar to Network Gateway -->
-  <line x1="64" y1="36" x2="64" y2="64" stroke="url(#accent)" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Subdomain to Infrastructure Netblocks -->
-  <path d="M 40 64 L 46 88" stroke="url(#accent)" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M 88 64 L 82 88" stroke="url(#accent)" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- SAN Certificate & Cloud Mesh Interlinks -->
-  <path d="M 64 64 L 46 88" stroke="#00f0ff" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.6"/>
-  <path d="M 64 64 L 82 88" stroke="#00f0ff" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.6"/>
-  <path d="M 46 88 L 82 88" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.65"/>
-
-  <!-- Sighting Crosshair Reticle Ticks on Apex Domain (Telescopic Optical Lock) -->
-  <line x1="64" y1="21" x2="64" y2="26" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="50" y1="36" x2="55" y2="36" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
-  <line x1="73" y1="36" x2="78" y2="36" stroke="#00f0ff" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- Infrastructure Nodes -->
-  <!-- Apex Root Domain Node (Telescope Sight / Primary Target) -->
-  <circle cx="64" cy="36" r="8" fill="#061325" stroke="url(#accent)" stroke-width="3"/>
-  <circle cx="64" cy="36" r="3.2" fill="#00f0ff"/>
-
-  <!-- Left Subdomain Node -->
-  <circle cx="40" cy="64" r="6" fill="#061325" stroke="url(#accent)" stroke-width="2.5"/>
-  <circle cx="40" cy="64" r="2.5" fill="#00f0ff"/>
-
-  <!-- Right Subdomain Node (Discovered SAN Sibling) -->
-  <circle cx="88" cy="64" r="6" fill="#061325" stroke="url(#accent)" stroke-width="2.5"/>
-  <circle cx="88" cy="64" r="2.5" fill="#00f0ff"/>
-
-  <!-- Central Cloud Gateway / ASN Hub -->
-  <circle cx="64" cy="64" r="5" fill="#061325" stroke="#00f0ff" stroke-width="2"/>
-  <circle cx="64" cy="64" r="2.5" fill="#38bdf8"/>
-
-  <!-- Bottom Left IP / Netblock Node -->
-  <circle cx="46" cy="88" r="4.5" fill="#00f0ff"/>
-
-  <!-- Bottom Right Exposed Asset / Threat Beacon (High-Risk Finding Alert) -->
-  <circle cx="82" cy="88" r="5.5" fill="url(#alert)"/>
-  <circle cx="82" cy="88" r="9.5" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="2 2" opacity="0.85"/>
+  <!-- Floating interconnected node (radar ping) -->
+  <circle cx="64" cy="44" r="6" fill="#ffffff" filter="url(#glow_1)"/>
 </svg>
