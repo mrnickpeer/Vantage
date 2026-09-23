@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vantage",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
   "permissions": [
     "storage",

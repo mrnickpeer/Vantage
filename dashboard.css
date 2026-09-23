@@ -7,8 +7,9 @@
   --border-strong: rgba(255, 255, 255, 0.2);
   --text: #f8fafc;
   --text-muted: #94a3b8;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
+  --primary: #8b5cf6;
+  --primary-hover: #7c3aed;
+  --primary-alpha: rgba(139, 92, 246, 0.25);
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #10b981;
@@ -53,7 +54,14 @@ header {
   margin-bottom: 1.5rem;
 }
 
-header h1 { font-size: 1.25rem; font-weight: 600; line-height: 1.2; }
+header h1 { 
+  font-size: 1.3rem; 
+  font-weight: 700; 
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2; 
+}
 .sub-heading { font-size: 0.75rem; color: var(--text-muted); display: block; }
 
 .header-right {

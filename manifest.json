@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vantage",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Passive attack surface reconnaissance, corporate infrastructure mapping, and exposure audit suite.",
   "permissions": [
     "storage",
@@ -23,7 +23,9 @@
     "https://api.shodan.io/*"
   ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "icons": {
     "16": "icons/icon-16.png",
@@ -46,7 +48,9 @@
       "id": "vantage@local.dev",
       "strict_min_version": "142.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   }
