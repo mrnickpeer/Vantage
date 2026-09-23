@@ -16,16 +16,16 @@ All discovery is **100% passive and zero-touch**—Vantage queries public third-
 ## 📸 Workstation Screenshots
 
 ### 1. Guided Mode: 6-Step Methodology & Templates Taxonomy
-![Vantage Dashboard Overview](screenshots/vantage_dashboard.png)
+![Vantage Dashboard Overview](screenshots/vantage_dashboard.png?v=2.1.1)
 
 ### 2. Tactical Mode: Power-User Omnibox & High-Speed Recon (v2.0)
-![Vantage Tactical Mode](screenshots/vantage_tactical.png)
+![Vantage Tactical Mode](screenshots/vantage_tactical.png?v=2.1.1)
 
 ### 3. CRT.SH Certificate Scope & Subdomain Subtraction
-![Vantage Subdomain Enumeration](screenshots/vantage_subdomains.png)
+![Vantage Subdomain Enumeration](screenshots/vantage_subdomains.png?v=2.1.1)
 
 ### 4. DNS Zone Intelligence & Cloud/SaaS Infrastructure
-![Vantage DNS & Infrastructure](screenshots/vantage_dns.png)
+![Vantage DNS & Infrastructure](screenshots/vantage_dns.png?v=2.1.1)
 
 ---
 
